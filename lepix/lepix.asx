@@ -1,0 +1,148 @@
+* Main definitions
+prog		equ $3000
+
+prog_max	equ $5000
+
+PM_base		equ $5000 ; memory for player data
+KB_KEYTABLE	equ PM_BASE+$000 ; $100, for 63 keys
+MENU_MENUTABLE	equ PM_BASE+$100	;$100, for ca 35 entries
+zoom_lineadr	equ PM_BASE+$200 	;hi addr of zoom per line
+MISS_base	equ PM_BASE+$300
+PLR0_base	equ PM_BASE+$400
+
+fontset		equ $5800
+gr0_mem		equ $5c00	;ca 1000
+
+module		equ $6000 ; module has memory $6000-$bfff and ROM if it wants
+
+* zero page
+zer0	equ $e0
+zer1	equ $e2
+zer2	equ $e4
+zer3	equ $e6
+zer4	equ $e8
+zerHlp	equ $f0
+
+	org prog
+start
+	jsr init
+
+;START_LINE	equ $20
+START_LINE	equ $70
+loop
+	lda #START_LINE
+	cmp $d40b
+	bcc *-3
+	lda #START_LINE
+	cmp $d40b
+	bcs *-3
+
+	mva #$22 $d01a
+	jsr zoom.zul_reset
+	jsr cursor_clear
+	mva #$44 $d01a
+
+	jsr KB.update
+	jsr JOY.update
+	mva #$66 $d01a
+
+	jsr cursor_update
+	mva #$aa $d01a
+
+	jsr ZOOM.update
+
+	; draw pixel if necessary
+	lda cursor_pressed
+	beq _dont_draw
+	jsr MOD_put_pixel
+	lda ZOOM.state
+	beq _dont_draw
+	lda cursor_Y
+	jsr zoom.zul_add ; max 1 line updated in zoom
+_dont_draw
+
+	lda KB.pressed
+	beq no_menu
+	lda KB.key
+	cmp #KEYCODE_ESC
+	beq go_menu
+	cmp #KEYCODE_TAB
+	bne no_menu
+go_menu
+	jsr VBL.disable
+	jsr MENU.enter
+	jsr VBL.enable
+no_menu
+
+	jsr zoom.zul_apply
+
+	mva #$00 $d01a
+
+;	mva #$cc $d01a
+
+
+	jmp loop
+
+*******************************************************************************
+* Initializes everything
+init	equ *
+;	sei
+;	inc $d40e
+	lda $d40b
+	bne *-3
+	sta $d400
+;	sta $d40e
+
+	jsr FONT.init
+	jsr ZOOM.init
+	jsr MENU.init
+	jsr dl.init
+	jsr cursor_init
+	jsr KB.init
+
+	jsr mod_init
+
+	lda $d40b
+	bne *-3
+
+	jsr DLI.init
+	jsr VBL.init
+;	mva #$c0 $d40e	; switch on all interrupts
+;	mva $22f $d400
+	lda $d40b
+	bne *-3
+	mva $22f $d400
+	mva #$c0 $d40e
+
+	rts
+
+*******************************************************************************
+	icl 'atari.asx'
+* Included libraries
+	icl 'font.asx'
+	icl 'dl.asx'
+	icl 'dli.asx'
+	icl 'vbl.asx'
+	icl 'cursor.asx'
+	icl 'utils.asx'
+	icl 'joy.asx'
+	icl 'keyboard.asx'
+	icl 'zoom.asx'
+	icl 'io.asx'
+	icl 'menu.asx'
+
+	icl 'mod_mic.asx'
+;	icl 'mod_inp.asx'
+;	icl 'mod_cin.asx'
+;	icl 'mod_hip.asx'
+
+*******************************************************************************
+main_vbl
+	rts
+*******************************************************************************
+	.PRINT 'End: '
+	.PRINT *
+	ert [*>prog_max]
+
+	run start
+;	INI start
