@@ -1021,12 +1021,12 @@ CIN_return	equ *
 
 	org scrE
 ;	ins 'cin/tqatrees.cin',0,7680
-	ins 'cin/anj.grE'
+;	ins 'cin/anj.grE'
 ;	ins 'mic/rpla.mic',0,7680
 
 	org scrF
 ;	ins 'cin/tqatrees.cin',7680,7680
-	ins 'cin/anj.grB'
+;	ins 'cin/anj.grB'
 ;	ins 'cin/rpl.grB',0,7680
 
 	org pline
