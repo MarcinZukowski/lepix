@@ -46,7 +46,7 @@ nmi_vbl
 
 * ****************************************************************************
 VBL_main
-	pha
+	phaxy
 
 	lda enabled
 	beq done
@@ -61,7 +61,7 @@ VBL_main
 	jsr mod_vbl
 
 done
-	pla
+	plaxy
 	rti
 
 MOD_LEN	equ *-VBL
