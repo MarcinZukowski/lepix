@@ -1,4 +1,4 @@
-LePix v.0.0.5
+LePix v.0.1.0
 by eru/tqa (eru[at]scene.pl)
 
 ==============================================================================
@@ -70,7 +70,7 @@ ToDo:
 ==============================================================================
 History:
 
-2004-..-.., v.0.1.0
+2004-12-18, v.0.1.0
 - added HIP module
 - project hosted on sourceforge.net
 - multiple changes to increase speed and stability
@@ -79,7 +79,7 @@ History:
 - wider 'chosen-color' marker
 - added various cursor shapes, changed with 'C'
 - displays version number in menu
-- uses memory under ROM for -> larger ZOOM :)
+- uses memory under ROM -> larger ZOOM :)
 - reset doesn't destroy image content
 - some minor changes and fixes
 
