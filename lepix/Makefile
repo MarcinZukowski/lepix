@@ -6,7 +6,7 @@ MADS=E:/a8/bin/mads_err.bat
 MADS_FLAGS=/l /t /m:e:\a8\bin\mads\Przyklady\xasm_macro.asm
 
 SRCS=lepix.asx dl.asx dli.asx vbl.asx cursor.asx utils.asx zoom.asx \
-	joy.asx keyboard.asx \
+	joy.asx keyboard.asx mouse.asx \
 	io.asx menu.asx \
 	mod_cin.asx mod_mic.asx mod_inp.asx mod_hip.asx
 

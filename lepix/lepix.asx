@@ -15,6 +15,8 @@ gr0_mem		equ $5c00	;ca 1000
 
 module		equ $6000 ; module has memory $6000-$bfff and ROM if it wants
 
+TESTMODE	equ 0 ; !0
+
 * zero page
 zer0	equ $e0
 zer1	equ $e2
@@ -26,10 +28,13 @@ zerHlp	equ $f0
 	org prog
 start
 	jsr init
-
-;START_LINE	equ $20
+		ift TESTMODE
+START_LINE	equ $20
+		els
 START_LINE	equ $70
+		eif
 loop
+	jsr MOUSE.update
 	lda #START_LINE
 	cmp $d40b
 	bcc *-3
@@ -37,17 +42,18 @@ loop
 	cmp $d40b
 	bcs *-3
 
-	mva #$22 $d01a
+;	mva #$22 $d01a
 	jsr zoom.zul_reset
 	jsr cursor_clear
-	mva #$44 $d01a
+;	mva #$44 $d01a
 
 	jsr KB.update
 	jsr JOY.update
-	mva #$66 $d01a
+;	mva #$66 $d01a
 
 	jsr cursor_update
-	mva #$aa $d01a
+
+;	mva #$aa $d01a
 
 	jsr ZOOM.update
 
@@ -74,9 +80,11 @@ go_menu
 	jsr VBL.enable
 no_menu
 
+;	mva #$4c $d01a
+
 	jsr zoom.zul_apply
 
-	mva #$00 $d01a
+;	mva #$00 $d01a
 
 ;	mva #$cc $d01a
 
@@ -99,6 +107,7 @@ init	equ *
 	jsr dl.init
 	jsr cursor_init
 	jsr KB.init
+	jsr MOUSE.init
 
 	jsr mod_init
 
@@ -112,7 +121,12 @@ init	equ *
 	lda $d40b
 	bne *-3
 	mva $22f $d400
+		ift TESTMODE
+	mva #$40 $d40e
+		els
 	mva #$c0 $d40e
+		eif
+
 
 	rts
 
@@ -126,6 +140,7 @@ init	equ *
 	icl 'cursor.asx'
 	icl 'utils.asx'
 	icl 'joy.asx'
+	icl 'mouse.asx'
 	icl 'keyboard.asx'
 	icl 'zoom.asx'
 	icl 'io.asx'
