@@ -51,23 +51,25 @@ scrE		equ $8060
 scrF		equ $6060
 SCR_EOR		equ [>scrE^>scrF]
 
-dl1_zoom	equ $a400
-dl2_zoom	equ $a600
+dl1_zoom	equ $b800
+dl2_zoom	equ $ba00
 
-cin_dl1		equ $a800
-cin_dl2		equ $ac00
+cin_dl1		equ $b000
+cin_dl2		equ $b400
 DL_EOR		equ [>cin_dl1^>cin_dl2]
 
-loline		equ $b000
-hiline		equ $b100
-div4		equ $b200
-ands		equ $b300
-lsrs		equ $b400
-zoomhi		equ $b500
-zoomlo		equ $b600
-div2		equ $b700
-zoomlo_gtia	equ $b800
-zoomhi_gtia	equ $b900
+loline		equ $a000
+hiline		equ $a100
+div4		equ $a200
+ands		equ $a300
+lsrs		equ $a400
+zoomhi		equ $a500
+zoomlo		equ $a600
+div2		equ $a700
+zoomlo_gtia	equ $a800
+zoomhi_gtia	equ $a900
+
+dlzoom_fill	equ $aa00
 
 *******************************************************************************
 
@@ -100,6 +102,8 @@ init
 	jsr KB.extend_keytable
 	ldxy CIN_MENUTABLE
 	jsr MENU.extend_menutable
+
+	jsr prp_dlzoom_fill
 	rts
 
 dli_palette
@@ -236,6 +240,92 @@ _mcd1	sta dl1_core
 _mcd2	sta dl2_core
 	inw _mcd2+1
 	rts
+
+prp_dlzoom_fill .LOCAL
+	mwa #dlzoom_fill wr+1
+; first, fill lo byte
+	ldx #[zoomlines]
+	mwa #DL1_zoom+5 zer1
+lo1
+	lda #{sta DL1_zoom+2}
+	jsr wr
+	lda zer1
+	jsr wr
+	lda zer1+1
+	jsr wr
+	lda #{sta DL2_zoom+2}
+	jsr wr
+	lda zer1
+	jsr wr
+	lda zer1+1
+	eor #[>DL1_zoom^>DL2_zoom]
+	jsr wr
+	addtozer zer1 6
+	dex
+	bne lo1
+	lda #{eor #$80}
+	jsr wr
+	lda #$80
+	jsr wr
+	ldx #[zoomlines]
+	mwa #DL1_zoom+2 zer1
+lo2	lda #{sta DL2_zoom+2}
+	jsr wr
+	lda zer1
+	jsr wr
+	lda zer1+1
+	jsr wr
+	lda #{sta DL2_zoom+2}
+	jsr wr
+	lda zer1
+	jsr wr
+	lda zer1+1
+	eor #[>DL1_zoom^>DL2_zoom]
+	jsr wr
+	addtozer zer1 6
+	dex
+	bne lo2
+; then, fill hi byte
+	ldx #0
+	mwa #DL1_zoom+3 zer1
+	mwa #DL2_zoom+3 zer2
+hloop ;)
+	txa
+	lsr @
+	bcs no_lda
+	lda #{lda zoom_lineadr,X}
+	jsr wr
+	txa
+	lsr @
+	jsr wr
+	lda >zoom_lineadr
+	jsr wr
+no_lda
+	lda #{sta DL1_zoom}
+	jsr wr
+	lda zer1
+	jsr wr
+	lda zer1+1
+	jsr wr
+	addtozer zer1 3
+	lda #{sta DL2_zoom}
+	jsr wr
+	lda zer2
+	jsr wr
+	lda zer2+1
+	jsr wr
+	addtozer zer2 3
+	inc zerHlp
+	inx
+	cpx #[2*zoomlines]
+	bne hloop
+; and exit
+	lda #{rts}
+wr	sta dlzoom_fill
+	inw wr+1
+	rts
+	.ENDL
+
 
 * ****************************************************************************
 * Palette management
@@ -559,45 +649,9 @@ zu_ready
 	sta cin_hscrol
 	ldx #0
 upl
-	txa
-	clc
-	adc ZOOM.zoom_Y
-	tay
-	lda zoom_lineadr,y
-	sta zerHlp+1
-
-	ldy #0
 	lda zerHlp
-	ora #$80
-	sta (zer1),y
-	sta (zer2),y
-	iny
-	lda zerHlp+1
-	sta (zer1),y
-	sta (zer2),y
-
-	ldy #3
-	lda zerHlp
-	sta (zer1),y
-	sta (zer2),y
-	iny
-	lda zerHlp+1
-	sta (zer1),y
-	sta (zer2),y
-	lda zer1
-	clc
-	adc #6
-	sta zer1
-	sta zer2
-	bcc *+6
-	inc zer1+1
-	inc zer2+1
-
-	inx
-	cpx #zoomlines
-;	cpx #28
-	bne upl
-	rts ; zoom_update
+	ldx ZOOM.zoom_Y
+	jmp dlzoom_fill
 
 enable_zoom
 	rts
