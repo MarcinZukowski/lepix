@@ -51,23 +51,21 @@ scrF1		equ $8060	;GTIA $40
 scrF2		equ $6060	;GTIA $80
 SCR_EOR		equ [>scrF1^>scrF2]
 
-dl1_zoom	equ $a400
-dl2_zoom	equ $a600
+dl1_zoom	equ $b800
+dl2_zoom	equ $ba00
+DLZOOM_EOR	equ [>dl1_zoom^>dl2_zoom]
 
-dl1			equ $a800
-dl2			equ $ac00
+dl1			equ $b000
+dl2			equ $b400
 DL_EOR		equ [>dl1^>dl2]
 
-loline		equ $b000
-hiline		equ $b100
-div4		equ $b200
-;ands		equ $b300
-;lsrs		equ $b400
-;zoomhi		equ $b500
-;zoomlo		equ $b600
-div2		equ $b700
-zoomlo_gtia	equ $b800
-zoomhi_gtia	equ $b900
+loline		equ $a000
+hiline		equ $a100
+div4		equ $a200
+zoomlo_gtia	equ $a300
+zoomhi_gtia	equ $a400
+
+dlzoom_fill	equ $aa00
 
 *******************************************************************************
 
@@ -85,6 +83,7 @@ vbl
 	lda VBL.frame
 	and #1
 	tay
+	tax
 	beq *+4
 	lda #DL_EOR
 	eor #>dl1
@@ -97,7 +96,7 @@ vbl
 	lda VBL.frame
 	eor zoom.zoom_top_Y
 	and #1
-	tay
+;	tay
 
 vbl_nozoom
 	lda _cols,y
@@ -133,6 +132,8 @@ init
 	jsr KB.extend_keytable
 	ldxy HIP_MENUTABLE
 	jsr MENU.extend_menutable
+
+	jsr prp_dlzoom_fill
 
 	jsr conv87
 ;	jsr conv2spr
@@ -281,6 +282,108 @@ _mcd2	sta dl2_core
 	inw _mcd2+1
 	rts
 
+prp_dlzoom_fill .LOCAL
+	mwa #dlzoom_fill wr+1
+; first, fill lo byte
+	ldx #[zoomlines]
+	mwa #DL1_zoom+2 zer1
+lo1
+	lda #{sta DL1_zoom+2}
+	jsr wr
+	lda zer1
+	jsr wr
+	txa
+	and #1
+	beq *+4
+	lda #DLZOOM_EOR
+	eor zer1+1
+	jsr wr
+	addtozer zer1 3
+	lda #{sta DL1_zoom+2}
+	jsr wr
+	lda zer1
+	jsr wr
+	txa
+	and #1
+	beq *+4
+	lda #DLZOOM_EOR
+	eor zer1+1
+	jsr wr
+	addtozer zer1 3
+	dex
+	bne lo1
+	lda #{eor #$80}
+	jsr wr
+	lda #$80
+	jsr wr
+	ldx #[zoomlines]
+	mwa #DL2_zoom+2 zer1
+lo2	lda #{sta DL1_zoom+2}
+	jsr wr
+	lda zer1
+	jsr wr
+	txa
+	and #1
+	beq *+4
+	lda #DLZOOM_EOR
+	eor zer1+1
+	jsr wr
+	addtozer zer1 3
+	lda #{sta DL2_zoom+2}
+	jsr wr
+	lda zer1
+	jsr wr
+	txa
+	and #1
+	beq *+4
+	lda #DLZOOM_EOR
+	eor zer1+1
+	jsr wr
+	addtozer zer1 3
+	dex
+	bne lo2
+; then, fill hi byte
+	ldx #0
+	mwa #DL1_zoom+3 zer1
+	mwa #DL2_zoom+3 zer2
+hloop ;)
+	txa
+	lsr @
+	bcs no_lda
+	lda #{lda zoom_lineadr,X}
+	jsr wr
+	txa
+	lsr @
+	jsr wr
+	lda >zoom_lineadr
+	jsr wr
+no_lda
+	lda #{sta DL1_zoom}
+	jsr wr
+	lda zer1
+	jsr wr
+	lda zer1+1
+	jsr wr
+	addtozer zer1 3
+	lda #{sta DL2_zoom}
+	jsr wr
+	lda zer2
+	jsr wr
+	lda zer2+1
+	jsr wr
+	addtozer zer2 3
+	inc zerHlp
+	inx
+	cpx #[2*zoomlines]
+	bne hloop
+; and exit
+	lda #{rts}
+wr	sta dlzoom_fill
+	inw wr+1
+	rts
+	.ENDL
+
+
 * ****************************************************************************
 * Palette management
 colorpos dta 8,24,32,40,48,56,64,72,80,88,96,104,112,120,128,144
@@ -422,7 +525,6 @@ create_tabs	.LOCAL
 	ldy #0
 _lp	tya
 	lsr @
-	sta div2,y
 	lsr @
 	sta div4,y
 	lda zer0
@@ -472,57 +574,16 @@ zoom_update	.LOCAL
 	mwa #dl2_zoom+2 zer4
 	lda ZOOM.zoom_X
 	lsr @
-	sta lo1+1
-	sta lo2+1
+	tay
 	lda #12
 	bcc *+4
 	lda #10
 	sta :HSCROL
 	sta hip_hscrol
-	ldx #0
-upl
-	txa
-	clc
-	adc ZOOM.zoom_Y
-	tay
-	lda zoom_lineadr,y
-	sta hi1+1
-	sta hi2+1
 
-	ldy #0
-lo1	lda #0
-	sta (zer3),y
-	ora #$80
-	sta (zer4),y
-	iny
-hi1	lda #0
-	sta (zer3),y
-	sta (zer4),y
-
-	ldy #3
-lo2	lda #0
-	sta (zer4),y
-	ora #$80
-	sta (zer3),y
-	ldy #4
-hi2	lda #0
-	sta (zer3),y
-	sta (zer4),y
-
-	lda zer3
-	clc
-	adc #6
-	sta zer3
-	sta zer4
-	bcc *+6
-	inc zer3+1
-	inc zer4+1
-
-	inx
-	cpx #zoomlines
-;	cpx #42
-	bne upl
-	rts ; zoom_update
+	tya
+	ldx ZOOM.zoom_Y
+	jmp dlzoom_fill
 	.ENDL
 
 enable_zoom
@@ -553,7 +614,6 @@ disable_zoom
 
 ; Y - lineno
 zoom_update_line	.LOCAL
-	rts
 	lda zoom_lineadr,y
 	sta dst1+2
 	sta dst2+2
@@ -705,87 +765,62 @@ HIP_KEYTABLE
 
 * ****************************************************************************
 * I/O routines
-		ift 0
-MIC_ext	dta c'MIC'
-CIN_ext dta c'CIN'
+HIP_ext dta c'HIP'
 
-load_mic
-	ldxy MIC_ext
+HIP_hdr_1
+	dta $ff,$ff,$10,$60,$4f,$7f	;I/O
+	dta $ff,$ff,$10,$60,$4f,$7f ;default
+HIP_hdr_2
+	dta $ff,$ff,$10,$80,$4f,$9f ;I/O
+	dta $ff,$ff,$10,$80,$4f,$9f ;default
+
+load_hip .LOCAL
+	ldxy HIP_ext
 	jsr IO.open_read
-	bpl transfer_mic
+	bpl ok
 	rts
-save_mic
-	ldxy MIC_ext
+ok	jsr transfer_hip
+	jmp conv87
+	.ENDL
+
+save_hip .LOCAL
+; prepare headers
+	ldy #5
+lp	lda HIP_hdr_1+6,y
+	sta HIP_hdr_1,y
+	lda HIP_hdr_2+6,y
+	sta HIP_hdr_2,y
+	dey
+	bpl lp
+	ldxy HIP_ext
 	jsr IO.open_write
-	bpl transfer_mic
+	bpl ok
 	rts
-transfer_mic	.LOCAL
-	mwa #scrE IO.adr
+ok	jsr conv78
+	jsr transfer_hip
+	jmp conv87
+	.ENDL
+transfer_hip .LOCAL
+	mwa #HIP_hdr_1 IO.adr
+	mwa #6 IO.len
+	jsr IO.do
+	bmi ex
+
+	mwa #scrF2 IO.adr
 	mwa #8000 IO.len
 	jsr IO.do
 	bmi ex
 
-	mwa #palette IO.adr
-	mwa #4 io.len
+	mwa #HIP_hdr_2 IO.adr
+	mwa #6 IO.len
 	jsr IO.do
 	bmi ex
 
-	jsr IO.close
-ex
-	rts
-	.ENDL ; transfer_mic
-
-load_cin
-	ldxy CIN_ext
-	jsr IO.open_read
-	bpl transfer_cin
-	rts
-save_cin
-	ldxy CIN_ext
-	jsr IO.open_write
-	bpl transfer_cin
-	rts
-transfer_cin .LOCAL
-	mwa #scrE IO.adr
+	mwa #scrF1 IO.adr
 	mwa #8000 IO.len
 	jsr IO.do
 	bmi ex
 
-	mwa #scrF IO.adr
-	mwa #8000 IO.len
-	jsr IO.do
-	bmi ex
-
-	mwa #palette IO.adr
-	mwa #4 io.len
-	jsr IO.do
-	bmi ex
-
-	jsr IO.close
-ex
-	rts
-	.ENDL ; transfer_cin
-
-load_cinX
-	ldxy CIN_ext
-	jsr IO.open_read
-	bpl transfer_cinX
-	rts
-save_cinX
-	ldxy CIN_ext
-	jsr IO.open_write
-	bpl transfer_cinX
-	rts
-transfer_cinX .LOCAL
-	mwa #scrE IO.adr
-	mwa #7680 IO.len
-	jsr IO.do
-	bmi ex
-
-	mwa #scrF IO.adr
-	mwa #7680 IO.len
-	jsr IO.do
-	bmi ex
 
 	jsr IO.close
 ex
@@ -797,60 +832,32 @@ clear .LOCAL
 	jsr IO.confirm
 	beq ex
 
-	mwa #scrE zer1
+	mwa #scrF1 zer1
 	mwa #8000 zer2
 	lda #0
 	jsr memset
 
-	mwa #scrF zer1
-	mwa #8000 zer2
-	lda #0
-	jsr memset
-
-ex	rts
-	.ENDL
-
-clearcol .LOCAL
-	jsr IO.confirm
-	beq ex
-
-	mwa #scrF zer1
+	mwa #scrF2 zer1
 	mwa #8000 zer2
 	lda #0
 	jsr memset
 
 ex	rts
 	.ENDL
-		eif
 
 * ****************************************************************************
 HIP_MENUTABLE
-;	dta '1',a(load_cin),a(load_cin_msg)
-;	dta '2',a(save_cin),a(save_cin_msg)
-;	dta '3',a(load_mic),a(load_mic_msg)
-;	dta '4',a(save_mic),a(save_mic_msg)
-;	dta '5',a(load_cinX),a(load_cinX_msg)
-;	dta '6',a(save_cinX),a(save_cinX_msg)
-;	dta 'C',a(clear),a(clear_msg)
-;	dta 'X',a(clearcol),a(clearcol_msg)
+	dta '1',a(load_hip),a(load_hip_msg)
+	dta '2',a(save_hip),a(save_hip_msg)
+	dta 'C',a(clear),a(clear_msg)
 	dta $ff
 
-load_cin_msg
-	dta c'1 - Load *.CIN (LEPIX, 200 lines)',eol
-save_cin_msg
-	dta c'2 - Save *.CIN (LEPIX, 200 lines)',eol
-load_mic_msg
-	dta c'3 - Load *.MIC',eol
-save_mic_msg
-	dta c'4 - Save *.MIC',eol
-load_cinX_msg
-	dta c'5 - Load *.CIN (CIN, 192 lines)',eol
-save_cinX_msg
-	dta c'6 - Save *.CIN (CIN, 192 lines)',eol
+load_hip_msg
+	dta c'1 - Load *.HIP',eol
+save_hip_msg
+	dta c'2 - Save *.HIP',eol
 clear_msg
 	dta c'C - Clear picture',eol
-clearcol_msg
-	dta c'X - Clear colors',eol
 
 * ****************************************************************************
 conv_colors .LOCAL
@@ -888,9 +895,15 @@ ad2	lda _27,x
 	.ENDL
 * Convert old HIP mode (colors 1..8) to the proper one (colors 0..7)
 _27	dta 0,0,1,2,3,4,5,6,7
+_28 dta 1,2,3,4,5,6,7,8,8
 conv87
 	ldxy _27
 	jmp conv_colors
+conv78
+	ldxy _28
+	jmp conv_colors
+
+
 
 ; Converts colors 0,1,2,3,4,5,6,7 into 0,2,4,6,1,3,5,7
 _2nrm	dta 0,2,4,6,1,3,5,7
@@ -902,10 +915,10 @@ conv2spr
 HIP_return	equ *
 
 	org scrF1 ;gtia40
-	ins 'hip/imagine.hip',8012,8000
+;	ins 'hip/imagine.hip',8012,8000
 
 	org scrF2 ;gtia80
-	ins 'hip/imagine.hip',6,8000
+;	ins 'hip/imagine.hip',6,8000
 
 	org pline
 	dta $00,$00,$00,$00
