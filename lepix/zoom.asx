@@ -88,9 +88,9 @@ Y_down ; Y went down
 	adc :MOD_zoom_h
 	jsr zul_add
 go_xy
-	mva #$ff $d01a
+;	mva #$ff $d01a
 	jsr :MOD_zoom_update
-	mva #$88 $d01a
+;	mva #$88 $d01a
 
 done_xy
 	; save settings as old
