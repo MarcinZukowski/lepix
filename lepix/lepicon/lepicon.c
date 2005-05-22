@@ -41,13 +41,19 @@ init_modules()
 	}
 }
 
+void info()
+{
+	INFO("lepicon v."VERSION" (c) 2005 eru/tqa\n");
+}
+
 void usage()
 {
 	int i;
+	info();
 	printf("Usage: %s [options] <file.bmp>\n", argv[0]);
-	printf("file.bmp needs to be 320x200, 256 shades of gray BMP file\n");
-	printf("optionally, you can use 64000b gray file with -g switch\n");
 	printf(
+	"file.bmp needs to be 320x200, 256 shades of gray BMP file\n"
+	"optionally, you can use 64000b gray file with -g switch\n"
 	"Options:\n"
 	"\t-g assume file is GRAY (no BMP header)\n"
 	"\t-s be silent\n"
@@ -55,7 +61,7 @@ void usage()
 	"\t-m <mod> choose a module, availabe modules:\n");
 	for(i=0;i<mod_cnt;i++) {
 		printf("\t\t%s - %s %s\n", mods[i]->id, mods[i]->info,
-			(i==mod_nr)?"(current)":"" );
+			(i==mod_nr)?"[current]":"" );
 	}
 	mods[mod_nr]->usage();
 }
@@ -160,7 +166,8 @@ int main(int _argc, char **_argv)
 	
 	parse_options();
 	
-	INFO("hresconv v."VERSION" (c) 2005 eru/tqa\n");
+	info();
+	
 	
 	read_file();
 
