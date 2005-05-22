@@ -54,7 +54,7 @@ static int parse_arg(int argc, char **argv)
 				ERROR("Not enough parameters for -a\n");
 			}
 			sscanf(argv[i++],"%d", &val);
-			if (val<0 && val>2) {
+			if (val<0 || val>2) {
 				ERROR("Possible automode values: 0,1,2\n");
 			}
 			automode=val;
@@ -65,7 +65,7 @@ static int parse_arg(int argc, char **argv)
 			}
 			sscanf(argv[i++],"%d", &nr);
 			sscanf(argv[i++],"%x", &val);
-			if (nr<0 && nr>3) {
+			if (nr<0 || nr>3) {
 				ERROR("Possible colors are 0..3\n");
 			}
 			xlbin[6+nr]=val;
@@ -75,7 +75,7 @@ static int parse_arg(int argc, char **argv)
 				ERROR("Not enough parameters for -d\n");
 			}
 			sscanf(argv[i++],"%d", &val);
-			if (val<0 && val>1) {
+			if (val<0 || val>1) {
 				ERROR("Possible dithering values: 0,1\n");
 			}
 			dithering=val;
@@ -210,7 +210,7 @@ static void write_files()
 
 modt mod_hr0 = {
 	"hr0",
-	"320x200, 4 shades of gray",
+	"320x200, 4 shades of gray (by Vidol)",
 	parse_arg,
 	usage,
 	convert,
