@@ -1,0 +1,134 @@
+	opt h+
+	
+JUSTBIN	equ 1
+
+		ift !JUSTBIN
+	org $4060
+;	ins 'face.int'
+;	ins 'alien.int'
+;	ins 'obraz.int'
+;	ins 'p2.hri'
+	ins 'pix/r1.sc0'
+
+	org $6060
+;	ins 'p1.hri'
+	ins 'pix/r1.sc1'
+		eif
+
+colors	equ $a000
+prog	equ $a004
+
+	org colors
+kol11 dta $04
+kol12 dta $06
+kol22 dta $00
+kol21 dta $00
+
+	org prog
+
+start
+	lda <dl
+	sta $230
+	lda >dl
+	sta $231
+	lda #0
+	sta $2c8
+	ldx <pr1
+	ldy >pr1
+	stx $200
+	sty $201
+	lda #$c0
+	sta $d40e
+	lda #$04
+	sta $2c4
+	lda #$08
+	sta $2c5
+	lda #$0
+	sta $2c6
+
+l1 equ *
+	lda 20
+	cmp 20
+	beq *-2
+
+	lda d1+1
+	eor #$20
+
+	sta d1+1
+	lda d2+1
+	eor #$20
+	sta d2+1
+	jmp l1
+
+pr1
+	sta $88
+	sty $89
+	stx $8a
+	ldy #100
+p1
+	lda kol11
+	ldx kol21
+	sta $d40a
+	sta $d017
+	stx $d018
+
+	lda kol12
+	ldx kol22
+	sta $d40a
+	sta $d017
+	stx $d018
+
+	dey
+	bne p1
+
+	lda <pr2
+	sta $200
+	lda >pr2
+	sta $201
+	lda $88
+	ldx $8a
+	ldy $89
+	 rti
+
+pr2
+	sta $88
+	sty $89
+	stx $8a
+	ldy #100
+p2
+
+	lda kol12
+	ldx kol22
+	sta $d40a
+	sta $d017
+	stx $d018
+
+	lda kol11
+	ldx kol21
+	sta $d40a
+	sta $d017
+	stx $d018
+
+	dey
+	bne p2
+	lda <pr1
+	sta $200
+	lda >pr1
+	sta $201
+	lda $88
+	ldy $89
+	ldx $8a
+	rti
+
+dl dta b($70),b($70),b($80),b($4f)
+
+d1 dta a($4060)
+:99 dta $0f
+ dta b($4f)
+d2 dta a($5000)
+:99 dta $0f
+ dta b($41),a(dl)
+
+
+    org $2e0
+  dta a(start)

@@ -1,0 +1,116 @@
+	opt h+
+	
+scr1	equ $4060
+scr2	equ $6060
+
+colors	equ $a000
+
+dl1		equ $b000
+dl2		equ $b400
+
+	org colors
+colF0	dta 0
+colF1	dta 8
+colE0	dta 0
+colE1	dta 2
+colE2	dta 4
+colE3	dta 6
+
+start
+	lda <dl1
+	sta $230
+	lda >dl1
+	sta $231
+	lda #0
+	sta $2c8
+	ldx <dli
+	ldy >dli
+	stx $200
+	sty $201
+	lda #$c0
+	sta $d40e
+	
+		ift 1
+	lda #$04
+	sta $2c4
+	lda #$08
+	sta $2c5
+	lda #$0
+	sta $2c6
+		els
+	lda colE0
+	sta $2c8
+	lda colE1
+	sta $2c4
+	lda colE2
+	sta $2c5
+	lda colE3
+	sta $2c6
+		eif
+
+l1 equ *
+	lda 20
+	cmp 20
+	beq *-2
+	
+	and #1
+:2	asl @
+	ora >dl1
+	sta $231
+
+	jmp l1
+	
+dli
+	sta $88
+	sty $89
+	stx $8a
+	lda colE0
+	sta $d01a
+	lda colE1
+	sta $d016
+	lda colE2
+	sta $d017
+	lda colE3
+	sta $d018
+	ldy #101
+dli_loop
+	lda colF1
+	ldx colF0
+	sta $d40a
+	sta $d017
+	stx $d018
+	
+	lda colE2
+	ldx colE3
+	sta $d40a
+	sta $d017
+	stx $d018
+
+	dey
+	bne dli_loop
+
+	lda $88
+	ldx $8a
+	ldy $89
+	rti
+
+	org dl1
+	dta $70,$70,$70
+	dta $80,$00,0
+	dta $4f,a(scr1),$0e
+:49	dta $0f,$0e
+	dta $4f,a(scr1+$0fa0),$0e
+:49	dta $0f,$0e
+	dta $41,a(dl2)
+
+	org dl2
+	dta $70,$70,$70
+	dta $00,$80,0
+	dta $4e,a(scr2),$0f
+:49	dta $0e,$0f
+	dta $4e,a(scr2+$0fa0),$0f
+:49	dta $0e,$0f
+	dta $41,a(dl1)
+	
+    org $2e0
+	dta a(start)
