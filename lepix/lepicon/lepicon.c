@@ -6,15 +6,19 @@
 #include "mod_hr0.h"
 #include "mod_hr1.h"
 #include "mod_hr2.h"
+#include "mod_gr8.h"
 
-#define VERSION "0.2"
+char* 
+#include "VERSION"
+;
 
 char *fname = NULL ;
 char *fname_base = NULL ;
 int is_gray=0;
+int is_test=0;
 
 unsigned char bmap[PICSIZE];
-int nlines;
+int nlines=VSIZE;
 
 int argc=0;
 char **argv=NULL;
@@ -25,10 +29,11 @@ mod_init* mod_inits[] = {
 	init_mod_hr0,
 	init_mod_hr1,
 	init_mod_hr2,
+	init_mod_gr8,
 } ;
+int mod_nr = 2 ;
 
 modt** mods = NULL ;
-int mod_nr = 0 ;
 int mod_cnt = sizeof(mod_inits)/sizeof(mod_init*);
 
 static void 
@@ -43,7 +48,7 @@ init_modules()
 
 void info()
 {
-	INFO("lepicon v."VERSION" (c) 2005 eru/tqa\n");
+	INFO("lepicon v.%s (c) 2005 eru/tqa\n", VERSION);
 }
 
 void usage()
@@ -57,6 +62,7 @@ void usage()
 	"Options:\n"
 	"\t-g assume file is GRAY (no BMP header)\n"
 	"\t-s be silent\n"
+	"\t-t generate a test picture\n"
 	"\t-h help\n"
 	"\t-m <mod> choose a module, availabe modules:\n");
 	for(i=0;i<mod_cnt;i++) {
@@ -96,6 +102,17 @@ void parse_options()
 				case 's':
 					is_silent=1;
 					break;
+				case 't': {
+					int x,y;
+					for(y=0;y<200;y++){
+						for(x=0;x<320;x++){
+							bmap[y*320+x]=(x+y)&0xff;
+						}
+					}
+					fname_base="test";
+					is_test=1;
+				}
+					break ;
 				default:
 					j = mods[mod_nr]->parse_arg(argc-i+1,argv+i-1);
 					if (!j) {
@@ -108,7 +125,7 @@ void parse_options()
 			fname = opt;
 		}
 	}
-	if (!fname) {
+	if (!fname && !is_test) {
 		printf("Filename missing\n");
 		exit(-1);
 	}
@@ -168,9 +185,10 @@ int main(int _argc, char **_argv)
 	
 	info();
 	
+	if (!is_test) {
+		read_file();
+	}
 	
-	read_file();
-
 	mods[mod_nr]->convert();
 
 	mods[mod_nr]->write_files();

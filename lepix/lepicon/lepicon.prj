@@ -1,9 +1,14 @@
 <project version="Crimson Editor 3.60">
 	<localfile path="C:\!ERU\XL\lepix\lepicon\bin2c.c" />
+	<localfile path="C:\!ERU\XL\lepix\lepicon\CHANGELOG" />
 	<localfile path="C:\!ERU\XL\lepix\lepicon\common.c" />
 	<localfile path="C:\!ERU\XL\lepix\lepicon\common.h" />
 	<localfile path="C:\!ERU\XL\lepix\lepicon\lepicon.c" />
 	<localfile path="C:\!ERU\XL\lepix\lepicon\Makefile" />
+	<localfile path="C:\!ERU\XL\lepix\lepicon\mkdist.sh" />
+	<localfile path="C:\!ERU\XL\lepix\lepicon\mod_gr8.asx" />
+	<localfile path="C:\!ERU\XL\lepix\lepicon\mod_gr8.c" />
+	<localfile path="C:\!ERU\XL\lepix\lepicon\mod_gr8.h" />
 	<localfile path="C:\!ERU\XL\lepix\lepicon\mod_hr0.asx" />
 	<localfile path="C:\!ERU\XL\lepix\lepicon\mod_hr0.c" />
 	<localfile path="C:\!ERU\XL\lepix\lepicon\mod_hr0.h" />
@@ -13,8 +18,12 @@
 	<localfile path="C:\!ERU\XL\lepix\lepicon\mod_hr2.asx" />
 	<localfile path="C:\!ERU\XL\lepix\lepicon\mod_hr2.c" />
 	<localfile path="C:\!ERU\XL\lepix\lepicon\mod_hr2.h" />
+	<localfile path="C:\!ERU\XL\lepix\lepicon\VERSION" />
 </project>
 
 <workspace version="Crimson Editor 3.60">
+	<localfile path="C:\!ERU\XL\lepix\lepicon\mod_gr8.c" linenum="77" />
+	<localfile path="C:\!ERU\XL\lepix\lepicon\lepicon.c" linenum="32" />
+	<localfile path="C:\!ERU\XL\lepix\lepicon\Makefile" linenum="22" />
 </workspace>
 
