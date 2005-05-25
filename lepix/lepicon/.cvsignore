@@ -3,4 +3,7 @@
 *.bmp
 *.BMP
 *.xlc
+*.PNG
+*.pcx
+*.stackdump
 
