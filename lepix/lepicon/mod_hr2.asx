@@ -95,7 +95,7 @@ dli_loop
 	rti
 
 	org dl1
-	dta $70,$70,$70
+	dta $70,$70
 	dta $80,$00,0
 	dta $4f,a(scr1),$0e
 :49	dta $0f,$0e
@@ -104,7 +104,7 @@ dli_loop
 	dta $41,a(dl2)
 
 	org dl2
-	dta $70,$70,$70
+	dta $70,$70
 	dta $00,$80,0
 	dta $4e,a(scr2),$0f
 :49	dta $0e,$0f
