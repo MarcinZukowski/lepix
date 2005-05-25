@@ -1,0 +1,38 @@
+	opt h+
+	
+scr1	equ $4060
+
+colors	equ $a000
+
+dl1		equ $b000
+
+	org colors
+colF0	dta $00
+colF1	dta $0e
+
+start
+	lda <dl1
+	sta $230
+	lda >dl1
+	sta $231
+	
+	lda #0
+	sta $2c8
+	lda colF0
+	sta $2c6
+	lda colF1
+	sta $2c5
+
+l1 equ *
+	jmp l1
+	
+	org dl1
+	dta $70,$70,$30
+	dta $4f,a(scr1)
+:99	dta $0f
+	dta $4f,a(scr1+$0fa0)
+:99	dta $0f
+	dta $41,a(dl1)
+
+    org $2e0
+	dta a(start)
