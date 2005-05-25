@@ -7,8 +7,6 @@ static unsigned char xlbin[]={
 #include "mod_hr2.xlc"
 };
 
-//static int dithering=0;
-
 static unsigned char scr0[PICSIZE/8];
 static unsigned char scr1[PICSIZE/8];
 static unsigned char scr0hdr[] = {0xff, 0xff, 0x60, 0x40, 0x9f, 0x5f};
@@ -23,8 +21,19 @@ static void usage()
 {
 	printf( 
 	"HR2 options:\n"
+	"\t-B <algorithm> - border generation algorithm:\n"
+	"\t\t0 - fixed [default]\n"
+	"\t\t1 - by value range\n"
+	"\t\t2 - by value frequency\n"
 	"\t-c <#color> <hex value> - set atari colour\n"
-	"\t-C <#colorset> - use colorset 0 or 1\n"
+	"\t-C <#colorset> - atari colorset:\n"
+	"\t\t0 - darker, less flickering [default]\n"
+	"\t\t1 - brighter, more flickering\n"
+	"\t-D <algorithm> - use dithering algorithm:\n"
+	"\t\t0 - none [default]\n"
+	"\t\t1 - chessboard\n"
+	"\t\t2 - progressive (experimental)\n"
+	"\t\t3 - Floyd-Steinberg\n"
 	);
 }
 
@@ -34,6 +43,16 @@ static int parse_arg(int argc, char **argv)
 	char *opt=argv[i++];
 	
 	switch(opt[1]) {
+		case 'B':
+			if (argc<i+1) {
+				ERROR("Not enough parameters for -B\n");
+			}
+			sscanf(argv[i++],"%d", &val);
+			if (val<0 || val>2) {
+				ERROR("Possible border generation algorithms are 0,1,2\n");
+			}
+			CM_border_algo=val;
+			break ;
 		case 'c':
 			if (argc<i+2) {
 				ERROR("Not enough parameters for -c\n");
@@ -57,6 +76,17 @@ static int parse_arg(int argc, char **argv)
 				xlbin[6+nr]=colorsets[6*val+nr];
 			}
 			break ;
+		case 'D':
+			if (argc<i+1) {
+				ERROR("Not enough parameters for -D\n");
+			}
+			sscanf(argv[i++],"%d", &val);
+			if (val<0 || val>3) {
+				ERROR("Possible dithering algorithms are 0,1,2,3\n");
+			}
+			CM_dither_algo=val;
+			break ;
+			
 		default:
 			i=0;
 	}
@@ -69,7 +99,6 @@ static void convert()
 	char *s0,*s1;
 	memset(scr0, 0, PICSIZE8);
 	memset(scr1, 0, PICSIZE8);
-	int CB[] = {51,102,153,204,256};
 	int colors[] = {
 		//	col15	col8a	col8b  
 			0,		0,		0,		// 00 !
@@ -99,8 +128,10 @@ static void convert()
 			3,		1,		1,		// 44 !
 	};
 	
+	CM_initialize(5);
+	
 	INFO("hr1: Converting %s\n", fname);
-
+	
 	for(y=0;y<nlines;y++) {
 		for(x=0;x<HSIZE;x+=2) {
 			int b0=bmap[y*HSIZE+x];
@@ -108,9 +139,12 @@ static void convert()
 			int c0,c1;
 			int ac0,ac1,ac2;
 			int ind;
+			
+			c0 = CM_get_color(x,y,b0);
+			c1 = CM_get_color(x+1,y,b1);
 
-			for(c0=0; b0>CB[c0]; c0++);
-			for(c1=0; b1>CB[c1]; c1++);
+//			for(c0=0; b0>color_borders[c0]; c0++);
+//			for(c1=0; b1>color_borders[c1]; c1++);
 			ind=5*c0+c1;
 
 			if (y&1) { // odd lines
