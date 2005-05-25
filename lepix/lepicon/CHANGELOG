@@ -1,0 +1,9 @@
+
+- made hr2 the default mode
+- added dithering
+- added test picture
+- added gr8 mode
+
+2005-05-22, v.0.2
+- initial release
+- supported modes: HR0, HR1, HR2
