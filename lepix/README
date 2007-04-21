@@ -1,4 +1,4 @@
-LePix v.0.1.0
+LePix v.0.1.1
 by eru/tqa (eru[at]scene.pl)
 
 ==============================================================================
@@ -6,14 +6,15 @@ Short manual:
 
 General:
 joystick - move cursor, button draws
+mouse    - move cursor (port 2)
 arrows   - move cursor
 ESC,TAB  - enter menu
 SHIFT    - draw
 P        - pick current color
 Z        - zoom
+C        - change cursor shape
 J/L      - dec/inc cursor width (not in zoom mode)
 I/K      - dec/inc cursor height (not in zoom mode)
-C        - change cursor shape
 
 MIC:
 Q/W      - prev/next color
@@ -34,6 +35,10 @@ A/S      - change the brightness of the current color
 D/F      - change the color of the current color :)
 0..3     - choose color 0..3
 M        - change work mode: only brightness, only tone or both
+
+HIP:
+Q/W      - prev/next color (brightness)
+A/S      - change the tone of the current color
 
 ==============================================================================
 Some hints:
@@ -57,7 +62,7 @@ ToDo:
 
 - code review.
 - mouse, lightpen support
-- modules: HIP,TIP,GR8,IN8
+- modules: TIP, GR8, IN8, HR2
 - INP: various interlace modes: checkers, lines(, frames?)
 - View mode: pressing 'V' should result in all menus disappearing
 - pictures larger than 200 scanlines - up to 238 lines
@@ -69,6 +74,10 @@ ToDo:
 
 ==============================================================================
 History:
+
+2007-??-??, v.0.?.?
+- fixed the first line display in HIP and CIN
+- experimental mouse support (both Amiga and AtariST), button doesn't work yet
 
 2004-12-18, v.0.1.0
 - added HIP module
