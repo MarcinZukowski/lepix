@@ -20,7 +20,7 @@ down
 
 gr0_sub
 	dta d'                                 ::LePix'
-	dta d'                                   0.1.0'
+	dta d'                                   0.1.1'
 
 gr0
 	dta $70,$70
@@ -28,6 +28,7 @@ gr0
 :23	dta 2
 	dta $60
 	dta $42,a(gr0_sub),2
+	dta $42,a(MOUSE.info_line)
 	dta $41,a(gr0)
 
 MOD_LEN	equ *-DL

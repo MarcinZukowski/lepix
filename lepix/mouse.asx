@@ -4,27 +4,21 @@
 
 MOUSE	.LOCAL
 
-MAX_DELAY	equ 10
-
-len		dta 0
-delay	dta 0
-old		dta 0
-dynamic	dta 1
-value	dta 0
-
 MOUSE_ST	equ 0 ; 0-amiga, 1-st
 
-		ift MOUSE_ST
+			ift MOUSE_ST
 htab	dta 0,2,3,1 ; st
 vtab	dta 0,8,12,4
 hand	equ 3
 vand	equ 12
-		els
+info_line		dta d'                  use ST mouse in port 2'
+			els
 htab	dta 0,2,10,8 ; amiga
 vtab	dta 0,1,5,4
 hand	equ 10
 vand	equ 5
-		eif
+info_line		dta d'               use Amiga mouse in port 2'
+			eif
 
 xind	dta 0
 yind	dta 0
