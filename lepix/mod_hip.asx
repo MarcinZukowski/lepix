@@ -173,6 +173,9 @@ _dp	sta $d40a
 	ldy #$6e-2-zoomlines
 	sty dli_core.maxline+1
 
+	lda gtias+1
+	sta $d01b
+	
 	plaxy
 	rti
 	.ENDL
@@ -183,11 +186,11 @@ dli_core	.LOCAL
 maxline	cmp #$6e
 	bcs blah
 
-	lda gtias+1
+	lda gtias
 	sta $d40a
 	sta $d01b
 
-	lda gtias
+	lda gtias+1
 	sta $d40a
 	sta $d01b
 
@@ -214,7 +217,7 @@ create_DL
 
 	ldy #100
 _lp
-	lda #$4f+$00
+	lda #$4f+$80
 	jsr _mcd
 	lda zer1
 	jsr _mcd
@@ -225,7 +228,7 @@ _lp
 
 	addToZer zer1 40
 
-	lda #$4f+$80
+	lda #$4f+$00
 	jsr _mcd
 	lda zer1
 	jsr _mcd
@@ -734,7 +737,7 @@ fix_lasty
 	ldy #0
 	txa
 	and #1
-	beq *+4
+	bne *+4
 	lda #$80
 	ora #$4f
 	sta (zer0),y
@@ -916,10 +919,12 @@ HIP_return	equ *
 
 	org scrF1 ;gtia40
 ;	ins 'hip/imagine.hip',8012,8000
-
+;	ins 'tip/SURPRICE.TIP',0009,4000
+	
 	org scrF2 ;gtia80
 ;	ins 'hip/imagine.hip',6,8000
-
+;	ins 'tip/SURPRICE.TIP',4009,4000
+	
 	org pline
 	dta $00,$00,$00,$00
 	dta $00,$00,$11,$11,$22,$22,$33,$33

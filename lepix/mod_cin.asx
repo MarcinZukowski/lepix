@@ -132,6 +132,10 @@ _dp	lda #$c0+$01
 
 	mva #$c0 $d01b
 	mwa #dli_core $200 ; switch DLI
+	
+	lda #$c0+$01
+	sta $d01b
+	
 	plaxy
 	rti
 
@@ -141,11 +145,11 @@ dli_core	.LOCAL
 	cmp #$6e
 	bcs blah
 
-	lda #$c0+$01
+	lda #$00+$01
 	sta $d40a
 	sta $d01b
 
-	lda #$00+$01
+	lda #$c0+$01
 	sta $d40a
 	sta $d01b
 
@@ -164,7 +168,7 @@ create_DL
 
 	ldy #100
 _mcd0
-	lda #$4f+$00	; gr.11 line
+	lda #$4f+$80	; gr.11 line
 	jsr _mcd
 	lda zer2
 	jsr _mcd1
@@ -177,7 +181,7 @@ _mcd0
 	jsr _mcd2
 	addToZer zer2 40
 
-	lda #$4e+$80	; gr.15 line
+	lda #$4e+$00	; gr.15 line
 	jsr _mcd
 	lda zer1
 	jsr _mcd1
@@ -208,16 +212,16 @@ _mcd0
 	; create DL_zoom
 	mwa #dl1_zoom _mcd1+1
 	mwa #dl2_zoom _mcd2+1
-	lda #$20+$80
+	lda #$20+$00
 	jsr _mcd
 	ldy #zoomlines
 cdl1
-	lda #$5f+$00 ; no DLI
+	lda #$5f+$80 ; no DLI
 	jsr _mcd
 	lda #0
 	jsr _mcd
 	jsr _mcd
-	lda #$5e+$80 ; DLI
+	lda #$5e+$00 ; DLI
 	jsr _mcd
 	lda #0
 	jsr _mcd
@@ -792,8 +796,10 @@ fix_lasty
 	eor #1
 	eor #1
 	beq *+4
-	lda #[[$4e+$80]^$4f]
-	eor #$4f
+	lda #[[$4e]^[$4f+$80]]
+	eor #[$4f+$80]
+;	lda #$4e
+;	eor #[[$4f+$80]^$4e]
 	ldy #0
 	sta (zer0),y
 	sta (zer1),y+
