@@ -77,7 +77,7 @@ write_hex
 :4	lsr @
 	cmp #10
 	bcc *+4
-	adc #'a'-'9'-34
+	adc #['a'-'9']-34
 	adc #$10
 	sta (zerHlp),y
 	txa
@@ -85,7 +85,7 @@ write_hex
 	and #$0f
 	cmp #10
 	bcc *+4
-	adc #'a'-'9'-34
+	adc #['a'-'9']-34
 	adc #$10
 	sta (zerHlp),y
 	rts
