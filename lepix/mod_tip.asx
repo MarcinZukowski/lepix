@@ -171,7 +171,7 @@ _dp	sta $d40a
 	ldy #$6e
 	lda zoom.state
 	beq *+4
-	ldy #$6e-2-2*zoomlines
+	ldy #$6e-4-2*zoomlines
 	sty dli_core.maxline+1
 	
 	mva #$c1 $d01b
@@ -206,7 +206,7 @@ normal
 	pla
 	jmp (DLI.down_vec)
 zoom
-	mva #$41 $d01b
+	mva #$c1 $d01b
 	mwa #dli_zoom $200
 	pla
 	rti
@@ -282,7 +282,9 @@ _switch	eor #0
 	; create DL_zoom
 	mwa #dl1_zoom _mcd1+1
 	mwa #dl2_zoom _mcd2+1
-	lda #$20
+	lda #$80
+	jsr _mcd
+	lda #$10
 	jsr _mcd
 	ldy #[2*zoomlines]
 cdl1
@@ -319,16 +321,16 @@ _mcd2	sta dl2_core
 prp_dlzoom_fill .LOCAL
 	mwa #dlzoom_fill wr+1
 ; first, fill lo byte of GR.11 (line + $00), same in both DLs
-	mwa #DL1_zoom+2 zer1
+	mwa #DL1_zoom+3 zer1
 	ldx #[2*zoomlines]
 lo1
-	lda #{sta DL1_zoom+2}
+	lda #{sta DL1_zoom+3}
 	jsr wr
 	lda zer1
 	jsr wr
 	lda zer1+1
 	jsr wr
-	lda #{sta DL1_zoom+2}
+	lda #{sta DL1_zoom+3}
 	jsr wr
 	lda zer1
 	jsr wr
@@ -346,9 +348,9 @@ lo1
 	lda #$50
 	jsr wr
 	ldx #[2*zoomlines-1]
-	mwa #DL1_zoom+5 zer1
+	mwa #DL1_zoom+6 zer1
 lo2	
-	lda #{sta DL1_zoom+5}
+	lda #{sta DL1_zoom+6}
 	jsr wr
 	lda zer1
 	jsr wr
@@ -369,9 +371,9 @@ lo2
 	lda #$50
 	jsr wr
 	ldx #[2*zoomlines-1]
-	mwa #DL1_zoom+5 zer1
+	mwa #DL1_zoom+6 zer1
 lo3	
-	lda #{sta DL1_zoom+5}
+	lda #{sta DL1_zoom+6}
 	jsr wr
 	lda zer1
 	jsr wr
@@ -387,8 +389,8 @@ lo3
 	bpl lo3
 ; then, fill hi byte
 	ldx #0
-	mwa #DL1_zoom+3 zer1
-	mwa #DL2_zoom+3 zer2
+	mwa #DL1_zoom+4 zer1
+	mwa #DL2_zoom+4 zer2
 hloop ;)
 	txa
 	and #3
@@ -717,8 +719,8 @@ us	lda mode_names,x
 zoom_lastY	dta 0
 
 zoom_update	.LOCAL
-	mwa #dl1_zoom+2 zer3
-	mwa #dl2_zoom+2 zer4
+	mwa #dl1_zoom+3 zer3
+	mwa #dl2_zoom+3 zer4
 	lda ZOOM.zoom_X
 	lsr @
 	tay
