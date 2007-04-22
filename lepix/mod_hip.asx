@@ -135,7 +135,7 @@ init
 
 	jsr prp_dlzoom_fill
 
-	jsr conv87
+;	jsr conv87
 ;	jsr conv2spr
 
 	rts
@@ -409,7 +409,6 @@ upd_bri
 	rts
 
 * ****************************************************************************
-; we always take GR9 pixel, since GR10 is not precise
 pick_color	.LOCAL
 	ldy cursor_y
 	mva loline,y zer1
@@ -418,19 +417,32 @@ pick_color	.LOCAL
 	lda cursor_x
 	lsr @
 	tay
-
-	lda (zer1),y
-	tax
+	bcc GR9
+GRA
+	lda zer1+1
+	eor #SCR_EOR
+	sta zer1+1
 	tya
 	lsr @
-	bcs take_hi
-take_lo
-	txa
-	and #$0f
-	jmp taken
-take_hi
-	txa
+	tay
+	lda (zer1),y
+	bcs GRA_lo
+GRA_hi
 :4	lsr @
+GRA_lo
+	and #$07
+	asl @
+	bcc taken ;!
+GR9
+	tya
+	lsr @
+	tay
+	lda (zer1),y
+	bcs GR9_lo
+GR9_hi
+:4	lsr @
+GR9_lo
+	and #$0f
 taken
 	sta cur_bri
 	jmp upd_bri
@@ -453,7 +465,6 @@ put_pixel .LOCAL
 loopY
 	mva #0 pp_cntX
 loopx
-
 	lda cursor_x
 	clc
 	adc pp_cntX
@@ -784,7 +795,7 @@ load_hip .LOCAL
 	rts
 ok	jsr transfer_hip
 	jmp conv87
-	.ENDL
+	.ENDL  ; load_hip
 
 save_hip .LOCAL
 ; prepare headers
@@ -802,7 +813,8 @@ lp	lda HIP_hdr_1+6,y
 ok	jsr conv78
 	jsr transfer_hip
 	jmp conv87
-	.ENDL
+	.ENDL  ; save_hip
+
 transfer_hip .LOCAL
 	mwa #HIP_hdr_1 IO.adr
 	mwa #6 IO.len
@@ -824,11 +836,10 @@ transfer_hip .LOCAL
 	jsr IO.do
 	bmi ex
 
-
 	jsr IO.close
 ex
 	rts
-	.ENDL ; transfer_cinX
+	.ENDL  ; transfer_hip
 
 
 clear .LOCAL
@@ -853,6 +864,8 @@ HIP_MENUTABLE
 	dta '1',a(load_hip),a(load_hip_msg)
 	dta '2',a(save_hip),a(save_hip_msg)
 	dta 'C',a(clear),a(clear_msg)
+	dta '7',a(conv78),a(conv78_msg)
+	dta '8',a(conv87),a(conv87_msg)
 	dta $ff
 
 load_hip_msg
@@ -861,7 +874,10 @@ save_hip_msg
 	dta c'2 - Save *.HIP',eol
 clear_msg
 	dta c'C - Clear picture',eol
-
+conv78_msg
+	dta c'7 - Convert colors 0..7 to 1..8',eol
+conv87_msg
+	dta c'8 - Convert colors 1..8 to 0..7',eol
 * ****************************************************************************
 conv_colors .LOCAL
 	stx ad1+1
@@ -920,10 +936,12 @@ HIP_return	equ *
 	org scrF1 ;gtia40
 ;	ins 'hip/imagine.hip',8012,8000
 ;	ins 'tip/SURPRICE.TIP',0009,4000
+;	ins 'tip/RESTING.TIP',0009,4000
 	
 	org scrF2 ;gtia80
 ;	ins 'hip/imagine.hip',6,8000
 ;	ins 'tip/SURPRICE.TIP',4009,4000
+;	ins 'tip/RESTING.TIP',4769,4000
 	
 	org pline
 	dta $00,$00,$00,$00
