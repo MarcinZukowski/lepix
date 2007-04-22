@@ -419,7 +419,6 @@ pct_lo
 :4	asl @
 	sta cur_tone
 	jmp update_status
-	rts
 pct_hi
 	tya
 	and #$f0
@@ -820,6 +819,7 @@ fix_lasty
 	rts
 
 * ****************************************************************************
+; Same code in mod_cin and mod_tip
 chg_mode
 	; multiply cursor_X by 2 if only tone
 	lda cur_mode
