@@ -146,10 +146,11 @@ init	equ *
 	icl 'io.asx'
 	icl 'menu.asx'
 
-	icl 'mod_mic.asx'
+;	icl 'mod_mic.asx'
 ;	icl 'mod_inp.asx'
 ;	icl 'mod_cin.asx'
 ;	icl 'mod_hip.asx'
+	icl 'mod_tip.asx'
 
 *******************************************************************************
 main_vbl

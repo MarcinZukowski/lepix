@@ -19,26 +19,32 @@ I/K      - dec/inc cursor height (not in zoom mode)
 MIC:
 Q/W      - prev/next color
 A/S      - change the brightness of the current color
-D/F      - change the color of the current color :)
+D/F      - change the tone of the current color
 0..3     - choose color 0..3
 
 INP:
 Q/W      - prev/next color
 A/S      - change the brightness of the current color
-D/F      - change the color of the current color :)
-0..6     - choose color 0..7
+D/F      - change the tone of the current color
+0..6     - choose color 0..6
 
 CIN:
 Q/W      - prev/next color (brightness)
-E/R      - prev/next color (color, tone, whatever it's called)
+E/R      - prev/next tone (color, tone, whatever it's called)
 A/S      - change the brightness of the current color
-D/F      - change the color of the current color :)
+D/F      - change the tone of the current color
 0..3     - choose color 0..3
 M        - change work mode: only brightness, only tone or both
 
 HIP:
 Q/W      - prev/next color (brightness)
-A/S      - change the tone of the current color
+A/S      - change the tone of the picture
+
+TIP:
+Q/W      - prev/next brightness
+E/R      - prev/next tone
+M        - change work mode: only brightness, only tone or both
+
 
 ==============================================================================
 Some hints:
@@ -61,8 +67,9 @@ Some hints:
 ToDo:
 
 - code review.
-- mouse, lightpen support
-- modules: TIP, GR8, IN8, HR2
+- improve mouse
+- add lightpen support
+- modules: GR8, IN8, HR2
 - INP: various interlace modes: checkers, lines(, frames?)
 - View mode: pressing 'V' should result in all menus disappearing
 - pictures larger than 200 scanlines - up to 238 lines
@@ -75,7 +82,11 @@ ToDo:
 ==============================================================================
 History:
 
-2007-??-??, v.0.?.?
+2007-??-??, v.
+- ??? working on TIP
+- fixed color picking in HIP
+
+2007-01-21, v.0.1.1
 - fixed the first line display in HIP and CIN
 - experimental mouse support (both Amiga and AtariST), button doesn't work yet
 

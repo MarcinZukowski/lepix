@@ -20,7 +20,7 @@ down
 
 gr0_sub
 	dta d'                                 ::LePix'
-	dta d'                                   0.1.1'
+	dta d'                                   0.1.2'
 
 gr0
 	dta $70,$70
