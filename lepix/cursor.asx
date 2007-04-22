@@ -390,7 +390,7 @@ _ok
 	sbc #6
 	sta zfr_H
 	lda MOD_zoom_w
-	ldx MOD_pixel_h
+	ldx MOD_pixel_w
 	dex
 	beq _ok2
 	clc
@@ -404,8 +404,6 @@ _ok2
 	sta zfr_W
 	rts
 	.ENDL
-
-
 
 zfr_clear	.LOCAL
 	lda zfr_last1
