@@ -933,16 +933,18 @@ conv2spr
 * ****************************************************************************
 HIP_return	equ *
 
+		ift INCLUDE_PICTURE
 	org scrF1 ;gtia40
-;	ins 'hip/imagine.hip',8012,8000
+	ins 'hip/imagine.hip',8012,8000
 ;	ins 'tip/SURPRICE.TIP',0009,4000
 ;	ins 'tip/RESTING.TIP',0009,4000
-	
+
 	org scrF2 ;gtia80
-;	ins 'hip/imagine.hip',6,8000
+	ins 'hip/imagine.hip',6,8000
 ;	ins 'tip/SURPRICE.TIP',4009,4000
 ;	ins 'tip/RESTING.TIP',4769,4000
-	
+		eif
+		
 	org pline
 	dta $00,$00,$00,$00
 	dta $00,$00,$11,$11,$22,$22,$33,$33

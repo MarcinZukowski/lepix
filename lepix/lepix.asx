@@ -146,6 +146,8 @@ init	equ *
 	icl 'io.asx'
 	icl 'menu.asx'
 
+INCLUDE_PICTURE	equ 0
+	
 ;	icl 'mod_mic.asx'
 ;	icl 'mod_inp.asx'
 ;	icl 'mod_cin.asx'

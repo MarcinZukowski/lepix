@@ -540,10 +540,12 @@ clear_msg
 * ****************************************************************************
 MIC_return	equ *
 
+		ift INCLUDE_PICTURE
 	org scrE
-;	ins 'mic/fight.mic'
+	ins 'mic/fight.mic'
 ;	ins 'mic/tqatrees.mic'
 ;	ins 'mic/rpl-a.mic'
+		eif
 
 	org pline
 :10	dta 0

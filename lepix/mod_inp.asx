@@ -787,11 +787,13 @@ clear_msg
 * ****************************************************************************
 INP_return	equ *
 
+		ift INCLUDE_PICTURE
 	org scrE1
-;	ins 'mic/rpla.mic'
+	ins 'mic/rpla.mic'
 
 	org scrE2
-;	ins 'mic/rplb.mic'
+	ins 'mic/rplb.mic'
+		eif  ; INCLUDE_PICTURE
 
 	org pline1
 :5	dta 0
