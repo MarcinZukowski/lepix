@@ -67,7 +67,7 @@ hiline		equ $a100	; line addresses - HI
 div4		equ $a200
 zoomlo_gtia	equ $a300  ; (00, 11, 22, ...,FF) x 16
 zoomhi_gtia	equ $a400  ; 00 x 16, 11 x 16, ..., FF x 16 
-
+trash_page	equ $a500	; for I/O skipping
 dlzoom_fill	equ $aa00
 
 *******************************************************************************
@@ -77,9 +77,9 @@ MODE_BRI	equ 2
 MODE_TONE	equ 1
 cur_mode	dta MODE_BOTH
 
-cur_bri 	dta 0	; values: 00,01,02,...,0f
-cur_tone	dta $00 ; values: 00,10,20,...,f0
-hip_hscrol	dta 12
+cur_bri 	dta 7	; values: 00,01,02,...,0f
+cur_tone	dta $70 ; values: 00,10,20,...,f0
+tip_hscrol	dta 12
 
 vbl
 	lda VBL.frame
@@ -128,9 +128,9 @@ init
 	jsr create_DL
 	jsr create_tabs
 	jsr update_status
-	ldxy HIP_KEYTABLE
+	ldxy TIP_KEYTABLE
 	jsr KB.extend_keytable
-	ldxy HIP_MENUTABLE
+	ldxy TIP_MENUTABLE
 	jsr MENU.extend_menutable
 
 	jsr prp_dlzoom_fill
@@ -147,7 +147,7 @@ gtias	dta 0,0
 
 dli_palette	.LOCAL
 	phaxy
-	mva hip_hscrol :HSCROL
+	mva tip_hscrol :HSCROL
 	sta $d40a
 ;	sta $d40a
 
@@ -206,8 +206,14 @@ normal
 	pla
 	jmp (DLI.down_vec)
 zoom
-	mva #$c1 $d01b
+	lda _dli_value+1
+	sta $d40a
+	sta $d01b
+	
 	mwa #dli_zoom $200
+	lda #$c1
+	sta $d40a
+	sta $d01b
 	pla
 	rti
 	.ENDL
@@ -721,14 +727,23 @@ zoom_lastY	dta 0
 zoom_update	.LOCAL
 	mwa #dl1_zoom+3 zer3
 	mwa #dl2_zoom+3 zer4
+	lda cur_mode
+	cmp #MODE_TONE
+	beq zu_tone
+zu_bri
 	lda ZOOM.zoom_X
 	lsr @
 	tay
 	lda #12
 	bcc *+4
 	lda #10
+	bne zu_ready
+zu_tone
+	ldy ZOOM.zoom_X
+	lda #12
+zu_ready
 	sta :HSCROL
-	sta hip_hscrol
+	sta tip_hscrol
 
 	tya
 	ldx ZOOM.zoom_Y
@@ -949,7 +964,7 @@ um_tone
 	mva #40 MOD_zoom_w
 	rts
 * ****************************************************************************
-HIP_KEYTABLE
+TIP_KEYTABLE
 	dta KEYCODE_Q,7,a(chg_bri),$ff
 	dta KEYCODE_W,7,a(chg_bri),$01
 
@@ -962,73 +977,146 @@ HIP_KEYTABLE
 
 * ****************************************************************************
 * I/O routines
-HIP_ext dta c'HIP'
+TIP_ext dta c'TIP'
 
-HIP_hdr_1
-	dta $ff,$ff,$10,$60,$4f,$7f	;I/O
-	dta $ff,$ff,$10,$60,$4f,$7f ;default
-HIP_hdr_2
-	dta $ff,$ff,$10,$80,$4f,$9f ;I/O
-	dta $ff,$ff,$10,$80,$4f,$9f ;default
+TIP_hdr
+	dta c'TIP'  ; 0: tag
+	dta $01		; 3: version ?
+	dta $00 	; 4: ?
+	dta 160		; 5: pixels in line
+	dta 100		; 6: lines
+	dta a(4000)	; 7: segment length
+TIP_loaded_hdr
+:9	dta 0
+transfer_size	dta 0,0		; how many bytes to transfer in each segment
+skip_size		dta 0,0		; how many bytes to skip in each segment
 
-load_hip .LOCAL
-	ldxy HIP_ext
+header_ok			dta $1d,c'Header OK',eol
+wrong_header_msg	dta $1d,c'Unsupported header !!!',$fd,$fd,eol
+
+load_tip .LOCAL
+	ldxy TIP_ext
 	jsr IO.open_read
-	bpl ok
+	bpl opened
 	rts
-ok	jsr transfer_hip
-	jmp conv87
-	.ENDL
-
-save_hip .LOCAL
-; prepare headers
+opened
+	MWA #TIP_loaded_hdr IO.adr
+	mwa #9 IO.len
+	jsr IO.do
+	bmi ex
+	
+	; verify the header
 	ldy #5
-lp	lda HIP_hdr_1+6,y
-	sta HIP_hdr_1,y
-	lda HIP_hdr_2+6,y
-	sta HIP_hdr_2,y
+_l	lda TIP_hdr,y
+	cmp TIP_loaded_hdr,y
+	bne header_error
 	dey
-	bpl lp
-	ldxy HIP_ext
+	bpl _l
+	bmi header_verified
+header_error
+	ldxy wrong_header_msg
+	jsr IO.msg
+	jmp $f2f8
+header_verified
+	ldxy header_ok
+	jsr IO.msg
+	; clean screen
+	jsr clear.confirmed
+
+	mwa TIP_hdr+7 transfer_size
+	
+	lda TIP_loaded_hdr+7
+	sec
+	sbc TIP_hdr+7
+	sta skip_size
+	lda TIP_loaded_hdr+8
+	sbc TIP_hdr+8
+	sta skip_size+1
+	bpl sizes_set
+nothing_to_skip
+	mwa TIP_loaded_hdr+7 transfer_size
+	mwa #0 skip_size
+sizes_set
+	jmp transfer_tip
+ex
+	rts
+	.ENDL	; load_tip
+
+transfer_tip	.LOCAL
+	mwa #scr40 IO.adr
+	jsr transfer_segment
+	bmi ex
+	
+	mwa #scr80 IO.adr
+	jsr transfer_segment
+	bmi ex
+	
+	mwa #scrC0 IO.adr
+	jsr transfer_segment
+	bmi ex
+
+ex
+	jsr IO.close
+	rts
+	.ENDL  ; transfer_tip
+	
+transfer_msg			dta $1d,c'Transferring segment...',eol
+transfer_segment .LOCAL
+	ldxy transfer_msg
+	jsr IO.msg
+	mwa transfer_size IO.len
+	jsr IO.do
+	bmi ex
+	
+	mwa skip_size zer1
+skip_loop
+	mwa #trash_page IO.adr
+	mwa #0 IO.len
+	
+	lda zer1+1
+	beq no_hi
+hi	dec zer1+1
+	lda #1
+	sta IO.len+1
+	bne do_skip
+no_hi
+	lda zer1
+	beq skip_done
+	sta IO.len
+	lda #0
+	sta zer1
+do_skip
+	jsr IO.do
+	jmp skip_loop	
+skip_done
+	
+ex
+	rts
+	.ENDL	; transfer_segment
+
+save_tip .LOCAL
+; prepare headers
+	ldxy TIP_ext
 	jsr IO.open_write
 	bpl ok
 	rts
-ok	jsr conv78
-	jsr transfer_hip
-	jmp conv87
-	.ENDL
-transfer_hip .LOCAL
-	mwa #HIP_hdr_1 IO.adr
-	mwa #6 IO.len
+ok	
+	MWA #TIP_hdr IO.adr
+	mwa #9 IO.len
 	jsr IO.do
 	bmi ex
-
-	mwa #scr80 IO.adr
-	mwa #8000 IO.len
-	jsr IO.do
-	bmi ex
-
-	mwa #HIP_hdr_2 IO.adr
-	mwa #6 IO.len
-	jsr IO.do
-	bmi ex
-
-	mwa #scr40 IO.adr
-	mwa #8000 IO.len
-	jsr IO.do
-	bmi ex
-
-
-	jsr IO.close
+	mwa TIP_hdr+7 transfer_size
+	mwa #0 skip_size
+	jsr transfer_tip
 ex
 	rts
-	.ENDL ; transfer_cinX
-
+	.ENDL
 
 clear .LOCAL
 	jsr IO.confirm
 	beq ex
 
+confirmed
 	mwa #scr40 zer1
 	mwa #4000 zer2
 	lda #0
@@ -1061,19 +1149,19 @@ ex	rts
 
 
 * ****************************************************************************
-HIP_MENUTABLE
-	dta '1',a(load_hip),a(load_hip_msg)
-	dta '2',a(save_hip),a(save_hip_msg)
+TIP_MENUTABLE
+	dta '1',a(load_tip),a(load_tip_msg)
+	dta '2',a(save_tip),a(save_tip_msg)
 	dta 'C',a(clear),a(clear_msg)
 	dta 'X',a(clearcol),a(clearcol_msg)
-	dta '7',a(conv78),a(conv78_msg)
-	dta '8',a(conv87),a(conv87_msg)
+;	dta '7',a(conv78),a(conv78_msg)
+;	dta '8',a(conv87),a(conv87_msg)
 	dta $ff
 
-load_hip_msg
-	dta c'1 - Load *.HIP',eol
-save_hip_msg
-	dta c'2 - Save *.HIP',eol
+load_tip_msg
+	dta c'1 - Load *.TIP',eol
+save_tip_msg
+	dta c'2 - Save *.TIP',eol
 clear_msg
 	dta c'C - Clear picture',eol
 clearcol_msg
@@ -1136,24 +1224,27 @@ conv2spr
 	ldxy _2spr
 	jmp conv_colors
 * ****************************************************************************
-HIP_return	equ *
-
+TIP_return	equ *
+		ift INCLUDE_PICTURE
 	org scr40 ;gtia40
 ;	ins 'tip/SURPRICE.TIP',0009,4000
 ;	ins 'tip/RESTING.TIP',0009,4000
 ;	ins 'hip/imagine.hip',8012,4000
+	ins 'tip/EDEN377.TIP',0009,4000
 	
 	org scr80 ;gtia80
 ;	ins 'tip/SURPRICE.TIP',4009,4000
 ;	ins 'tip/RESTING.TIP',4769,4000
 ;	ins 'hip/imagine.hip',6,4000
+	ins 'tip/EDEN377.TIP',4769,4000
 
 	org scrC0 ;gtiac0
 ;	ins 'tip/SURPRICE.TIP',8009,4000
 ;	ins 'tip/RESTING.TIP',9529,4000
 ;	ins 'cin/rpl.grB',0,4000
-;:4000	dta $88
-	
+	ins 'tip/EDEN377.TIP',9529,4000
+		eif
+		
 	org pline
 	dta $00,$00,$00,$00
 	dta $00,$00,$11,$11,$22,$22,$33,$33
@@ -1188,7 +1279,7 @@ DL2_return
 
 dl2_core	equ *
 
-	org HIP_return
+	org TIP_return
 
 MOD_LEN	equ *-TIP
 	.ENDL  ; TIP
