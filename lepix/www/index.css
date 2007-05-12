@@ -1,0 +1,43 @@
+body {
+    Font-Family : Verdana, Tahoma, Sans-Serif ! important;
+    Font-Size : 12pt;
+    Color : #0000CC;
+    background-color: #EEEECC;
+}
+input,select{
+	 background-color: #DDDDBB;
+	 border-color: #EEEECC;
+}
+.l1{
+    font-size : 12pt;
+    font-weight : bold;
+}
+.l2{
+    font-size : 10pt;
+    font-weight: normal;
+}
+pre {
+	font-size: 9pt;
+	border: 1px solid black;
+	background-color: #FFFFDD
+}
+p.varia{
+    font-size: 9pt;
+}
+td.sig {
+    font-size: 9pt;
+}
+a,a:visited {
+	text-decoration: underline;
+    color: #0000CC;
+}
+a:hover,a:active {
+	color: #007cc3 ;
+}
+font.list{
+    font-size : 9pt ;
+    font-weight: normal;
+}
+.seek{
+    margin: 0px;
+}

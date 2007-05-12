@@ -33,10 +33,15 @@ MOD_zoom_top_h		dta 200-4-[2*INP.zoomlines] ; lines from main panel visible
 
 MOD_screen	equ *
 	dta d'C0:.. C2:.. C4:.. C6:..            ::INP'
-	dta d'keys:QW ASDF 0123456 JLIK PCZ           '
+	dta d'keys:QW ASDF 0123456 JLIK PCZ UY        '
 
 MOD_curcolor_X	dta 10 ; in 15 pixels, from 0
 MOD_curcolor_W	dta 20 ; in 15 pixels
+
+; returns the mode color as a byte (used in UNDO)
+MOD_get_color	jmp INP.get_color
+; sets the mode colors as a byte (used in UNDO)
+MOD_set_color	jmp INP.set_color
 
 MOD_MOD_LEN	equ *-MOD_MOD
 
@@ -72,6 +77,14 @@ dlzoom_fill	equ $a800 ; zoomlines*15
 palette		dta $00,$14,$28,$3e
 cur_color	dta 0
 inp_hscrol	dta 12
+
+set_color	
+	sta cur_color
+	rts
+get_color
+	lda cur_color
+	rts
+
 
 vbl
 	lda VBL.frame
@@ -288,7 +301,23 @@ mpp_cntY	dta 0
 mpp_cntX	dta 0
 ipp_posy	dta 0
 
-ipp_sub
+ipp_sub	.LOCAL
+	pha
+	ldy div4,x
+	lda (zer0),y
+	ldy lsrs,x
+	beq pick_end
+pick
+	lsr @
+	dey
+	bne pick
+pick_end
+	and #3
+	clc
+	adc UNDO.old_c
+	sta UNDO.old_c
+;	set pixel
+	pla
 	ldy lsrs,x
 	beq mpp_cont
 mpp	asl @
@@ -303,11 +332,15 @@ mpp_cont
 	ora zerHlp
 	sta (zer0),y
 	rts
+	.ENDL	; ipp_sub
 
 put_pixel
+	jsr UNDO.put_pixel_prelude
+
 	mva cursor_h mpp_cntY
 
 	ldy cursor_y
+	sty UNDO.pos_y
 	sty ipp_posy
 	lda loline,y
 	sta zer0
@@ -316,10 +349,12 @@ put_pixel
 mpp_loopY
 	mva #0 mpp_cntX
 mpp_loopx
+	mva #0 UNDO.old_c
 	lda cursor_x
 	clc
 	adc mpp_cntX
 	tax
+	stx UNDO.pos_x
 
 	eor ipp_posy
 	and #1
@@ -350,6 +385,10 @@ ipp_cols_ready
 	lda zer0+1
 	eor #scrE_eor
 	sta zer0+1
+	
+	lda cur_color
+	sta UNDO.new_c
+	jsr UNDO.put_pixel_save
 
 	inc mpp_cntX
 	lda mpp_cntX
@@ -364,8 +403,11 @@ ipp_cols_ready
 	inc zer0+1
 
 	inc ipp_posY
+	inc UNDO.pos_y
 	dec mpp_cntY
 	bne mpp_loopY
+
+	jsr UNDO.put_pixel_epilogue
 
 	rts
 

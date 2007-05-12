@@ -1,3 +1,4 @@
+* LEPIX module UTILS
 UTILS_MOD	equ *
 
 ldxy	.MACRO
@@ -35,6 +36,23 @@ addToZer .MACRO ' '
 	bcc *+4
 	inc :1+1
 	.ENDM
+	
+incZer .MACRO ' '
+	inc :1
+	lda :1
+	bne _skip
+	inc :1+1
+_skip	
+	.ENDM  ; incZer
+decZer .MACRO ' '
+	lda :1
+	dec :1
+	cmp #0
+	bne _skip
+	dec :1+1
+_skip	
+	.ENDM  ; decZer
+	
 
 
 * expects value in A and lo/hi dest in X/Y
@@ -92,6 +110,8 @@ write_hex
 
 * error, keep on printing random colors
 error
+	sei
+	inc $d40e
 	lda 53770
 	sta $d01a
 	jmp error

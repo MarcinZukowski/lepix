@@ -100,7 +100,7 @@ mw? .macro ' '
      .exit
     .endif
 
-    .if :2<256
+    .if :2<256&&:2>0
       ld:5 #:2
       st:5 :4
       ld:5 #0

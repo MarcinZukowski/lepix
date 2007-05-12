@@ -1,0 +1,223 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+<HEAD>
+    <TITLE>Lepix</TITLE>
+	<META http-equiv="Content-Type" content="text/html; charset=iso-8859-2">
+    <LINK REL="stylesheet" HREF="index.css" TYPE="text/css">
+</HEAD>
+<BODY>
+<a name="top"></a>
+<center>
+<h1>LEPIX</h1>
+
+<a href="#about">About</a> .
+<a href="#news">News</a> .
+<a href="#faq">FAQ</a> .
+<a href="#sf">Sourceforge</a> .
+<a href="#sshots">Screenshots</a> .
+<a href="#contact">Contact</a>
+<p>
+(c) 2004-2007 Marcin 'Eru' Żukowski
+</center>
+
+<!-- ===================================================================== -->
+<hr>
+<a name="about"></a><h3>About Lepix</h3>
+
+<b>Lepix</b> is a painting program for Atari XL/XE.<br/>
+
+Its main task is to provide a common infrastructure and user interface for
+various graphic modes.<br/>
+
+Lepix project additionally includes <b>Lepicon</b>, a program for PC that 
+ allows convertion of .bmp files into Atari formats.<br/>
+
+<p class="varia" align="right"><a href="#top">back to the top</a></p>
+<!-- ===================================================================== -->
+<hr>
+<a name="news"></a><h3>News</h3>
+
+<p>
+<b>2007.05.12 - Lepix 0.2.0 released!</b><br/>
+After a looong silence, a new version is 
+<a href="http://sourceforge.net/project/showfiles.php?group_id=126366&package_id=138262&release_id=507950">available here</a>!
+<br/>
+Changelog:
+<pre>
+Major changes:
+- added TIP module
+- added undo (U) and redo (R) options
+Minor changes:
+- fixed color picking in HIP
+- fixed 'ghost cursor' and zoomed-cursor problems
+- fixed the first line display in HIP and CIN
+- experimental mouse support (both Amiga and AtariST), 
+  doesn't really work
+- added new cursor shapes
+- README Atari-readable in .atr
+</pre>
+
+<p>
+<b>2005.05.23 - Lepicon is born!</b><br/>
+I developed a small tool to experiment with new graphic modes. 
+It allows automatic generation of .xex files from .bmp files.
+You can download it from the <a href="https://sourceforge.net/project/showfiles.php?group_id=126366">lepix sourceforge page</a>
+
+<p>
+<b>2005.01.03 - MADS has its own website</b><br/>
+MADS assembler is now available at 
+<a href="http://g2f.atari8.info/mads">http://g2f.atari8.info/mads</a> (polish only).
+<br/>Note, that due to lack of time Lepix wasn't tested with the most recent version.
+
+<p>
+<b>2004.12.18 - Lepix 0.1.0 released!</b><br/>
+First Sourceforge release of Lepix is here!
+You can download it from the project's
+<a href="http://sourceforge.net/project/showfiles.php?group_id=126366">
+files section</a>
+<p>
+Changelog:
+<pre>
+- added HIP module
+- project hosted on sourceforge.net
+- multiple changes to increase speed and stability
+- name changed from LEPIX to LePix :)
+- zoom mode: displays markers around the zoomed area
+- wider 'chosen-color' marker
+- added various cursor shapes, changed with 'C'
+- displays version number in menu
+- uses memory under ROM -> larger ZOOM :)
+- reset doesn't destroy image content
+- some minor changes and fixes
+</pre>
+
+<p>
+<b>2004.12.12 - Lepix becomes open-source</b><br/>
+Today Lepix has been released under GPL license and became Sourceforge project.
+More details in the <a href="#sf">Sourceforge section</a>
+
+<p class="varia" align="right"><a href="#top">back to the top</a></p>
+<!-- ===================================================================== -->
+<hr>
+<a name="faq"></a><h3>FAQ</h3>
+
+<p>
+<b>Q: What do I need to compile Lepix?</b><br/>
+<b>A:</b> Lepix is written using MADS assembler by Tomasz 'TeBe' Biela.
+MADS is available <a href="http://mads.atari8.info/">here</a>. 
+
+<p>
+<b>Q: What graphic modes does Lepix currently support?</b><br/>
+<b>A:</b> 
+<b>MIC</b> (Graphics 15, 160x200. 4 colors), 
+<b>INP</b> (160x200, 7 colors),
+<b>CIN</b> (160x200, 16 tones * 4 brightnesses), 
+<b>HIP</b> (160x200, 16 brightnesses),
+<b>TIP</b> (160x100, 16 tones * 16 brightnesses), 
+<p>
+<b>Q: What graphic modes are considered for the future?</b><br/>
+<b>A:</b> 
+<b>RIP</b> (160x200, colors hard to describe),
+<b>GR8</b> (320x200, 2 colors),
+<b>IN8</b> (320x200, 3 colors),
+<b>HR2</b> (320x200, 5 colors),
+and possibly some new modes :).
+ The hi-res (320x200) modes would require some serious changes to the Lepix infrastructure 
+ (e.g. cursor couldn't be just sprite-based anymore).
+ That means, I will do it only if there is enough users demand.
+
+<p>
+<b>Q: Will there be mouse support?</b><br/>
+<b>A:</b> The experimental support is here. 
+However, it is far from perfect. 
+Problem is, the Amiga and Atari ST mouses have very (very!) small
+resolution, resulting in a need for frequent checks. 
+It is hard to do with some graphic modes, as they leave very little CPU time. 
+If you know a nice way to read mouse e.g. once every frame, please let me know.
+
+<p>
+<b>Q: Can I modify Lepix sources</b><br/>
+<b>A:</b> Lepix is released under GPL.
+That means you can modify the sources but the project has to stay GPL.
+More details in LICENSE file in the CVS repository and releases.
+
+<p>
+<b>Q: How can I help Lepix project</b><br/>
+<b>A:</b> You may submit patches for the sources, send me more example pictures,
+and simply use it. If you want to become official Lepix developer, contact me.
+
+<p class="varia" align="right"><a href="#top">back to the top</a></p>
+<!-- ===================================================================== -->
+<hr>
+<A style="float:right;" href="http://sourceforge.net"> <IMG src="http://sourceforge.net/sflogo.php?group_id=126366&amp;type=5" width="210" height="62" border="0" alt="SourceForge.net Logo" /></A>
+<a name="sf"></a><h3>Sourceforge</h3>
+
+<p>
+Lepix is hosted at the Sourceforge
+(<a href="http://www.sourceforge.net">www.sourceforge.net</a>).<br/>
+<p>
+The link to main project's website is
+<a href="http://sourceforge.net/projects/lepix/">http://sourceforge.net/projects/lepix</a>
+<p>
+On that website you can download both sources and binary releases, access CVS,
+submit bugs, patches and feature requests and so on.
+
+<p class="varia" align="right"><a href="#top">back to the top</a></p>
+<!-- ===================================================================== -->
+<hr>
+<a name="sshots"></a><h3>Screenshots</h3>
+
+<table width="100%" cellpadding="3" >
+<tr align="center"><td colspan="2"><h4>MIC pictures</h4></td></tr>
+<tr align=center><td>
+	<img src="gfx/mic-fight.png"/>
+	<p>"Fight" by Dracon/Taquart
+	</td><td>
+	<img src="gfx/mic-fight-z.png"/>
+	<p>"Fight" in zoom mode
+</td></tr>
+<tr align="center"><td colspan="2"><h4>INP pictures</h4></td></tr>
+<tr align=center><td>
+	<img src="gfx/inp-replay.png"/>
+	<p>"Lodos" by Replay/BitBusters
+	</td><td>
+	<img src="gfx/inp-replay-z.png"/>
+	<p>"Lodos" in zoom mode
+</td></tr>
+<tr align="center"><td colspan="2"><h4>CIN pictures</h4></td></tr>
+<tr align=center><td>
+	<img src="gfx/cin-dedykacja.png"/>
+	<p>"Dedykacja" by Anj/Tristesse
+	</td><td>
+	<img src="gfx/cin-dedykacja-z.png"/>
+	<p>"Dedykacja" in zoom mode
+</td></tr>
+<tr align="center"><td colspan="2"><h4>HIP pictures</h4></td></tr>
+<tr align=center><td>
+	<img src="gfx/hip-imagine.png"/>
+	<p>"Imagine" by BeWu/Grayscale
+	</td><td>
+	<img src="gfx/hip-imagine-z.png"/>
+	<p>"Imagine" in zoom mode
+</td></tr>
+<tr align="center"><td colspan="2"><h4>HIP pictures</h4></td></tr>
+<tr align=center><td>
+	<img src="gfx/tip-resting.png"/>
+	<p>"Resting"
+	</td><td>
+	<img src="gfx/tip-resting-z.png"/>
+	<p>"Resting" in zoom mode
+</td></tr>
+
+</table>
+
+<p class="varia" align="right"><a href="#top">back to the top</a></p>
+<!-- ===================================================================== -->
+<hr>
+<a name="contact"></a><h3>Contact</h3>
+
+To contact me, write to eru at scene dot pl
+
+<p class="varia" align="right"><a href="#top">back to the top</a></p>
+
+</BODY>

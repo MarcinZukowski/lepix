@@ -1,4 +1,7 @@
 * Main definitions
+undo_buffer	equ $2800
+undo_length	equ $0800
+
 prog		equ $3000
 
 prog_max	equ $5000
@@ -18,11 +21,12 @@ module		equ $6000 ; module has memory $6000-$bfff and ROM if it wants
 TESTMODE	equ 0 ; !0
 
 * zero page
-zer0	equ $e0
-zer1	equ $e2
-zer2	equ $e4
-zer3	equ $e6
-zer4	equ $e8
+zer		equ $e0
+zer0	equ $e2
+zer1	equ $e4
+zer2	equ $e6
+zer3	equ $e8
+zer4	equ $ea
 zerHlp	equ $f0
 
 	org prog
@@ -57,15 +61,7 @@ loop
 
 	jsr ZOOM.update
 
-	; draw pixel if necessary
-	lda cursor_pressed
-	beq _dont_draw
-	jsr MOD_put_pixel
-	lda ZOOM.state
-	beq _dont_draw
-	lda cursor_Y
-	jsr zoom.zul_add ; max 1 line updated in zoom
-_dont_draw
+	jsr put_pixel_if_needed
 
 	lda KB.pressed
 	beq no_menu
@@ -87,9 +83,40 @@ no_menu
 ;	mva #$00 $d01a
 
 ;	mva #$cc $d01a
-
-
 	jmp loop
+
+***********************************************************
+* Puts pixel, but only if button has just been pressed or if
+* it's still pressed and the cursor moved
+put_pixel_if_needed .LOCAL
+	ldx last_pressed
+	lda cursor_pressed
+	sta last_pressed
+	beq dont_draw
+	txa
+	ldx cursor_X
+	ldy cursor_Y
+	cmp #0
+	beq draw
+	cpx last_X
+	bne draw
+	cpy last_Y
+	beq dont_draw
+draw
+	stx last_X
+	sty last_Y
+	jsr MOD_put_pixel
+	lda ZOOM.state
+	beq dont_draw
+	lda cursor_Y
+	jsr zoom.zul_add ; max 1 line updated in zoom
+dont_draw
+	rts
+	
+last_pressed	dta 0
+last_X			dta 0
+last_Y			dta 0
+	.ENDL  ; put_pixel_if_new
 
 *******************************************************************************
 * Initializes everything
@@ -108,6 +135,7 @@ init	equ *
 	jsr cursor_init
 	jsr KB.init
 	jsr MOUSE.init
+	jsr UNDO.init
 
 	jsr mod_init
 
@@ -145,14 +173,32 @@ init	equ *
 	icl 'zoom.asx'
 	icl 'io.asx'
 	icl 'menu.asx'
-
-INCLUDE_PICTURE	equ 0
+	icl 'undo.asx'
 	
-;	icl 'mod_mic.asx'
-;	icl 'mod_inp.asx'
-;	icl 'mod_cin.asx'
-;	icl 'mod_hip.asx'
+INCLUDE_PICTURE	equ 0
+
+		ift !GFX_MODE
+;GFX_MODE	equ 1	; MIC
+;GFX_MODE	equ 2	; INP
+;GFX_MODE	equ 3	; CIN
+;GFX_MODE	equ 4	; HIP
+GFX_MODE	equ 5	; TIP
+		eif
+		
+		ift GFX_MODE=1
+	icl 'mod_mic.asx'
+		eli GFX_MODE=2
+	icl 'mod_inp.asx'
+		eli GFX_MODE=3
+	icl 'mod_cin.asx'
+		eli GFX_MODE=4
+	icl 'mod_hip.asx'
+		eli GFX_MODE=5
 	icl 'mod_tip.asx'
+		els
+	.PRINT 'Unspecified mode'
+	ert 1;
+		eif
 
 *******************************************************************************
 main_vbl

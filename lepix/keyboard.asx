@@ -152,6 +152,9 @@ KEYTABLE
 	dta KEYCODE_P,255,a(MOD_pick_color),0
 	; zoom
 	dta KEYCODE_Z,255,a(ZOOM.zoom_switch),0
+	; undo/redo
+	dta KEYCODE_U,7,a(UNDO.do_undo), 0
+	dta KEYCODE_Y,7,a(UNDO.do_redo), 0
 
 KEYTABLE_END	equ *
 	dta $ff

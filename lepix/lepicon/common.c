@@ -129,10 +129,14 @@ int CM_get_color(int x, int y, int value)
 			value=MIN(value,255);
 			for(ret=1; value>color_borders[ret]; ret++);
 			reminder = value-color_borders[ret-1];
-			if (reminder<0) {
-				ERROR("value=%d ret=%d cb[ret-1]=%d reminder=%d < 0", 
-					value, ret, color_borders[ret-1], reminder);
-			}
+//			reminder = value-(color_borders[ret-1]+color_borders[ret])/2;
+//			if (ret==1 && reminder > 0) {
+//				reminder = 0;
+//			}
+//			if (reminder<0) {
+//				ERROR("value=%d ret=%d cb[ret-1]=%d reminder=%d < 0", 
+//					value, ret, color_borders[ret-1], reminder);
+//			}
 			if (x<HSIZE-1) {
 					diffusion[(y+0)*HSIZE+x+1] += reminder * 7 ;
 			}

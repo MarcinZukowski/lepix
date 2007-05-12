@@ -89,7 +89,7 @@ void parse_options()
 					break;
 				case 'm':
 					for(j=0;j<mod_cnt;j++) {
-						if (stricmp(mods[j]->id, argv[i])==0) {
+						if (strcasecmp(mods[j]->id, argv[i])==0) {
 							mod_nr=j;
 							break ;
 						}

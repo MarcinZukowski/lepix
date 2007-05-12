@@ -33,10 +33,15 @@ MOD_zoom_top_h		dta 100-2-[2*TIP.zoomlines] ; lines from main panel visible
 
 MOD_screen	equ *
 	dta d'BRI:.. TONE:..                     ::TIP'
-	dta d'keys:QW   AS        JLIK PCZ     M :....'
+	dta d'keys:QWER           JLIK PCZ UY  M :....'
 
 MOD_curcolor_X	dta 0  ; in 15 pixels, from 0
 MOD_curcolor_W	dta 8  ; in 15 pixels
+
+; returns the mode color as a byte (used in UNDO)
+MOD_get_color	jmp TIP.get_color
+; sets the mode colors as a byte (used in UNDO)
+MOD_set_color	jmp TIP.set_color
 
 MOD_MOD_LEN	equ *-MOD_MOD
 
@@ -80,6 +85,19 @@ cur_mode	dta MODE_BOTH
 cur_bri 	dta 7	; values: 00,01,02,...,0f
 cur_tone	dta $70 ; values: 00,10,20,...,f0
 tip_hscrol	dta 12
+
+set_color	
+	pha
+	and #$f0
+	sta cur_tone
+	pla
+	and #$0f
+	sta cur_bri
+	rts
+get_color
+	lda cur_bri
+	ora cur_tone
+	rts
 
 vbl
 	lda VBL.frame
@@ -534,11 +552,30 @@ finito
 * ****************************************************************************
 pp_cntY	dta 0
 pp_cntX	dta 0
+pp_do_bri	dta 0
+pp_do_tone	dta 0
+pp_old_bri	dta 0
+pp_old_tone	dta 0
+pp_new_bri	dta 0
+pp_new_tone	dta 0
 
 put_pixel .LOCAL
+	jsr UNDO.put_pixel_prelude
+
 	mva cursor_h pp_cntY
 
+	lda cur_mode
+	and #MODE_BRI
+	ora undo.ignore			; when in ignore, always set everything
+	sta pp_do_bri
+
+	lda cur_mode
+	and #MODE_TONE
+	ora undo.ignore
+	sta pp_do_tone
+
 	ldy cursor_y
+	sty UNDO.pos_y
 	lda loline,y
 	sta zer1
 	sta zer2
@@ -552,16 +589,17 @@ put_pixel .LOCAL
 loopY
 	mva #0 pp_cntX
 loopx
+	mva #0 UNDO.pos_x
 
 	lda cursor_x
 	clc
 	adc pp_cntX
+	ldx pp_do_bri
+	bne *+3
+	asl @		; multiply by 2, as we're in the tone mode 
 	tax
+	stx UNDO.pos_x
 	
-	lda cur_mode
-	and #MODE_BRI
-	beq pp_tone
-
 	ldy div4,x
 	txa
 	lsr @
@@ -570,20 +608,38 @@ GR10
 	lsr @
 	bcs GR10_lo
 GR10_hi
+; save brightness
+	lda (zer2),y
+:4	lsr @
+	asl @
+	sta pp_old_bri
+	lda pp_do_bri
+	jeq pp_pre_tone
+; put brightness
 	lda (zer2),y
 	and #$0f
 	sta zerHlp
 	lda cur_bri
+	sta pp_new_bri
 	lsr @
 :4	asl @
 	ora zerHlp
 	sta (zer2),y
 	jmp pp_pre_tone
 GR10_lo
+; save brightness
+	lda (zer2),y
+	asl @
+	and #$0f
+	sta pp_old_bri
+	lda pp_do_bri
+	beq pp_pre_tone
+; put_brightness
 	lda (zer2),y
 	and #$f0
 	sta zerHlp
 	lda cur_bri
+	sta pp_new_bri
 	lsr @
 	ora zerHlp
 	sta (zer2),y
@@ -592,15 +648,32 @@ GR9
 	lsr @
 	bcs GR9_lo
 GR9_hi
+; save brightness
+	lda (zer1),y
+:4	lsr @
+	sta pp_old_bri
+	lda pp_do_bri
+	beq pp_pre_tone
+; put brightness
 	lda (zer1),y
 	and #$0f
 	sta zerHlp
 	lda cur_bri
+	sta pp_new_bri
 :4	asl @
 	ora zerHlp
 	sta (zer1),y
 	jmp pp_pre_tone
 GR9_lo
+; save brightness
+	lda (zer1),y
+	and #$0f
+	sta pp_old_bri
+	lda pp_do_bri
+	beq pp_pre_tone
+; put brightness
+	lda cur_bri
+	sta pp_new_bri
 	lda (zer1),y
 	and #$f0
 	ora cur_bri
@@ -612,16 +685,20 @@ pp_pre_tone  ; divide cursor X by 2 for tone
 	tax
 
 pp_tone
-	lda cur_mode
-	and #MODE_TONE
-	beq pp_cont
-
 	txa
 	lsr @
 	tay
 	bcc ppt_hi
 ppt_lo
+; save tone
+	lda (zer3),y
+:4	asl @
+	sta pp_old_tone
+	lda pp_do_tone
+	beq pp_cont
+; put tone
 	lda cur_tone
+	sta pp_new_tone
 :4	lsr @
 	sta zerHlp
 	lda (zer3),y
@@ -630,12 +707,39 @@ ppt_lo
 	sta (zer3),y
 	jmp pp_cont
 ppt_hi
+; save tone
+	lda (zer3),y
+	and #$f0
+	sta pp_old_tone
+	lda pp_do_tone
+	beq pp_cont
+; put tone
+	lda cur_tone
+	sta pp_new_tone
 	lda (zer3),y
 	and #$0f
 	ora cur_tone
 	sta (zer3),y
 	
 pp_cont
+	lda pp_old_tone
+	ora pp_old_bri
+	sta UNDO.old_c
+	
+	lda pp_old_tone
+	ldx pp_do_tone
+	bne *+5
+	sta pp_new_tone
+	lda pp_old_bri
+	ldx pp_do_bri
+	bne *+5
+	sta pp_new_bri
+	
+	lda pp_new_tone
+	ora pp_new_bri
+	sta UNDO.new_c
+	jsr UNDO.put_pixel_save
+
 	inc pp_cntX
 	lda pp_cntX
 	cmp cursor_W
@@ -652,8 +756,11 @@ pp_cont
 	inc zer2+1
 	inc zer3+1
 	
+	inc UNDO.pos_y
 	dec pp_cntY
 	jne loopY
+	
+	jsr UNDO.put_pixel_epilogue
 
 	rts
 	.ENDL ; put_pixel
@@ -968,8 +1075,8 @@ TIP_KEYTABLE
 	dta KEYCODE_Q,7,a(chg_bri),$ff
 	dta KEYCODE_W,7,a(chg_bri),$01
 
-	dta KEYCODE_A,7,a(chg_tone),$f0
-	dta KEYCODE_S,7,a(chg_tone),$10
+	dta KEYCODE_E,7,a(chg_tone),$f0
+	dta KEYCODE_R,7,a(chg_tone),$10
 
 	dta KEYCODE_M,15,a(chg_mode),0
 
@@ -1228,21 +1335,21 @@ TIP_return	equ *
 		ift INCLUDE_PICTURE
 	org scr40 ;gtia40
 ;	ins 'tip/SURPRICE.TIP',0009,4000
-;	ins 'tip/RESTING.TIP',0009,4000
+	ins 'tip/RESTING.TIP',0009,4000
 ;	ins 'hip/imagine.hip',8012,4000
-	ins 'tip/EDEN377.TIP',0009,4000
+;	ins 'tip/EDEN377.TIP',0009,4000
 	
 	org scr80 ;gtia80
 ;	ins 'tip/SURPRICE.TIP',4009,4000
-;	ins 'tip/RESTING.TIP',4769,4000
+	ins 'tip/RESTING.TIP',4769,4000
 ;	ins 'hip/imagine.hip',6,4000
-	ins 'tip/EDEN377.TIP',4769,4000
+;	ins 'tip/EDEN377.TIP',4769,4000
 
 	org scrC0 ;gtiac0
 ;	ins 'tip/SURPRICE.TIP',8009,4000
-;	ins 'tip/RESTING.TIP',9529,4000
+	ins 'tip/RESTING.TIP',9529,4000
 ;	ins 'cin/rpl.grB',0,4000
-	ins 'tip/EDEN377.TIP',9529,4000
+;	ins 'tip/EDEN377.TIP',9529,4000
 		eif
 		
 	org pline

@@ -33,10 +33,15 @@ MOD_zoom_top_h		dta 200-4-[2*HIP.zoomlines] ; lines from main panel visible
 
 MOD_screen	equ *
 	dta d'BRI:.. TONE:..                     ::HIP'
-	dta d'keys:QW   AS        JLIK PCZ            '
+	dta d'keys:QW   AS        JLIK PCZ UY         '
 
 MOD_curcolor_X	dta 0  ; in 15 pixels, from 0
 MOD_curcolor_W	dta 8  ; in 15 pixels
+
+; returns the mode color as a byte (used in UNDO)
+MOD_get_color	jmp HIP.get_color
+; sets the mode colors as a byte (used in UNDO)
+MOD_set_color	jmp HIP.set_color
 
 MOD_MOD_LEN	equ *-MOD_MOD
 
@@ -72,6 +77,14 @@ dlzoom_fill	equ $aa00
 cur_bri 	dta 0	; values: 00,01,02,...,0f
 cur_tone	dta $00 ; values: 00,10,20,...,f0
 hip_hscrol	dta 12
+
+set_color	
+	and #$0f
+	sta cur_bri
+	rts
+get_color
+	lda cur_bri
+	rts
 
 setc .MACRO ' '
 	lda HIP.cur_tone
@@ -452,9 +465,12 @@ pp_cntY	dta 0
 pp_cntX	dta 0
 
 put_pixel .LOCAL
+	jsr UNDO.put_pixel_prelude
+
 	mva cursor_h pp_cntY
 
 	ldy cursor_y
+	sty UNDO.pos_y
 	lda loline,y
 	sta zer1
 	sta zer2
@@ -469,6 +485,7 @@ loopx
 	clc
 	adc pp_cntX
 	tax
+	stx UNDO.pos_x
 	ldy div4,x
 
 	lsr @
@@ -477,7 +494,11 @@ GR10
 	lsr @
 	bcs GR10_lo
 GR10_hi
-	lda (zer2),y
+	lda (zer2),y		; save brightness
+:4	lsr @
+	asl @
+	sta UNDO.old_c
+	lda (zer2),y		; put brightness
 	and #$0f
 	sta zerHlp
 	lda cur_bri
@@ -486,8 +507,12 @@ GR10_hi
 	ora zerHlp
 	sta (zer2),y
 	jmp cont
-GR10_lo
-	lda (zer2),y
+GR10_lo					
+	lda (zer2),y		; save brightness
+	asl @
+	and #$0f
+	sta UNDO.old_c
+	lda (zer2),y		; put brightness
 	and #$f0
 	sta zerHlp
 	lda cur_bri
@@ -499,7 +524,10 @@ GR9
 	lsr @
 	bcs GR9_lo
 GR9_hi
-	lda (zer1),y
+	lda (zer1),y		; save brightness
+:4	lsr @
+	sta UNDO.old_c		
+	lda (zer1),y		; put_brightness
 	and #$0f
 	sta zerHlp
 	lda cur_bri
@@ -508,15 +536,23 @@ GR9_hi
 	sta (zer1),y
 	jmp cont
 GR9_lo
-	lda (zer1),y
+	lda (zer1),y		; save brightness
+	and #$0f
+	sta UNDO.old_c
+	lda (zer1),y		; put brightness
 	and #$f0
 	ora cur_bri
 	sta (zer1),y
 cont
+
+	lda cur_bri
+	sta UNDO.new_c
+	jsr UNDO.put_pixel_save
+
 	inc pp_cntX
 	lda pp_cntX
 	cmp cursor_W
-	bne loopX
+	jne loopX
 
 	lda zer1
 	clc
@@ -527,8 +563,11 @@ cont
 	inc zer1+1
 	inc zer2+1
 
+	inc UNDO.pos_y
 	dec pp_cntY
-	bne loopY
+	jne loopY
+	
+	jsr UNDO.put_pixel_epilogue
 
 	rts
 	.ENDL ; put_pixel

@@ -33,10 +33,15 @@ MOD_zoom_top_h		dta 200-4-[2*CIN.zoomlines] ; lines from main panel visible
 
 MOD_screen	equ *
 	dta d'C0:.. C1:.. C2:.. C3:..  TONE:..   ::CIN'
-	dta d'keys:QWER ASDF 0123 JLIK PCZ M     :....'
+	dta d'keys:QWER ASDF 0123 JLIK PCZ UY  M :....'
 
 MOD_curcolor_X	dta 0  ; in 15 pixels, from 0
 MOD_curcolor_W	dta 40 ; in 15 pixels
+
+; returns the mode color as a byte (used in UNDO)
+MOD_get_color	jmp CIN.get_color
+; sets the mode colors as a byte (used in UNDO)
+MOD_set_color	jmp CIN.set_color
 
 MOD_MOD_LEN	equ *-MOD_MOD
 
@@ -73,15 +78,28 @@ dlzoom_fill	equ $aa00
 
 *******************************************************************************
 
-palette		dta $00,$04,$08,$0c
-cur_bri 	dta 0	; values: 00,02,04,...,fc,fe
-cur_tone	dta $80	; values: 00,10,20,...,e0,f0
-CIN_hscrol	dta 12
-
 MODE_BOTH	equ 3
 MODE_BRI	equ 2
 MODE_TONE	equ 1
 cur_mode	dta MODE_BOTH
+
+palette		dta $00,$04,$08,$0c
+cur_bri 	dta 0	; values: 0..3
+cur_tone	dta $70	; values: 00,10,20,...,e0,f0
+CIN_hscrol	dta 12
+
+set_color	
+	pha
+	and #$f0
+	sta cur_tone
+	pla
+	and #$0f
+	sta cur_bri
+	rts
+get_color
+	lda cur_bri
+	ora cur_tone
+	rts
 
 vbl
 	lda VBL.frame
@@ -427,10 +445,30 @@ pct_hi
 * ****************************************************************************
 mpp_cntY	dta 0
 mpp_cntX	dta 0
+pp_do_bri	dta 0
+pp_do_tone	dta 0
+pp_old_bri	dta 0
+pp_old_tone	dta 0
+pp_new_bri	dta 0
+pp_new_tone	dta 0
+
 put_pixel
+	jsr UNDO.put_pixel_prelude
+
 	mva cursor_h mpp_cntY
 
+	lda cur_mode
+	and #MODE_BRI
+	ora undo.ignore			; when in ignore, always set everything
+	sta pp_do_bri
+
+	lda cur_mode
+	and #MODE_TONE
+	ora undo.ignore
+	sta pp_do_tone
+	
 	ldy cursor_y
+	sty UNDO.pos_y
 	lda loline,y
 	sta zer1
 	sta zer2
@@ -445,12 +483,29 @@ mpp_loopx
 	lda cursor_x
 	clc
 	adc mpp_cntX
+	ldx pp_do_bri
+	bne *+3
+	asl @		; multiply by 2, as we're in the tone mode 
 	tax
+	stx UNDO.pos_x
 
-	lda cur_mode
-	and #MODE_BRI
-	beq pp_tone
+	; save old bri
+	ldy div4,x	
+	lda (zer1),y
+	ldy lsrs,x	
+	beq sob_end
+sob	
+	lsr @
+	dey
+	bne sob
+sob_end
+	and #$03
+	sta pp_old_bri
+	
+	lda pp_do_bri
+	beq pp_pre_tone
 
+	; put new bri
 	lda cur_bri
 	ldy lsrs,x
 	beq mpp_cont
@@ -466,6 +521,7 @@ mpp_cont
 	ora zerHlp
 	sta (zer1),y
 
+pp_pre_tone
 	txa
 	lsr @
 	tax
@@ -480,7 +536,12 @@ pp_tone
 	lsr @
 	bcc ppt_hi
 ppt_lo
-	lda cur_tone
+	lda (zer2),y		; save old tone
+:4	asl @
+	sta pp_old_tone
+	lda pp_do_tone
+	beq pp_cont
+	lda cur_tone		; put new tone
 :4	lsr @
 	sta zerHlp
 	lda (zer2),y
@@ -489,16 +550,44 @@ ppt_lo
 	sta (zer2),y
 	jmp pp_cont
 ppt_hi
-	lda (zer2),y
+	lda (zer2),y		; save old tone
+	and #$f0
+	sta pp_old_tone
+	lda pp_do_tone
+	beq pp_cont
+	lda (zer2),y		; put_new_tone
 	and #$0f
 	ora cur_tone
 	sta (zer2),y
 
 pp_cont
+	lda pp_old_tone
+	ora pp_old_bri
+	sta UNDO.old_c
+	
+	lda cur_tone
+	sta pp_new_tone
+	lda cur_bri
+	sta pp_new_bri
+
+	lda pp_old_tone
+	ldx pp_do_tone
+	bne *+5
+	sta pp_new_tone
+	lda pp_old_bri
+	ldx pp_do_bri
+	bne *+5
+	sta pp_new_bri
+	
+	lda pp_new_tone
+	ora pp_new_bri
+	sta UNDO.new_c
+	jsr UNDO.put_pixel_save
+
 	inc mpp_cntX
 	lda mpp_cntX
 	cmp cursor_W
-	bne mpp_loopX
+	jne mpp_loopX
 
 	lda zer1
 	clc
@@ -509,9 +598,11 @@ pp_cont
 	inc zer1+1
 	inc zer2+1
 
+	inc UNDO.pos_y
 	dec mpp_cntY
-	bne mpp_loopY
+	jne mpp_loopY
 
+	jsr UNDO.put_pixel_epilogue
 	rts
 
 
