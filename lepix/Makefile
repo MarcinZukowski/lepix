@@ -32,4 +32,6 @@ clean:
 		*.MACRO* READMExl
 
 src-zip:
-	zip lepix-src.zip $(SRCS) Makefile
+	zip lepix-src.zip \
+		$(SRCS) Makefile README LICENSE INSTALL
+
