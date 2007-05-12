@@ -117,6 +117,14 @@ cs2
 	dta	%10000010
 	dta	%11000110
 cs3
+	dta	%10000001
+	dta	%00000000
+	dta	%00000000
+	dta	%00000000
+	dta	%00000000
+	dta	%00000000
+	dta	%10000001
+cs4
 	dta	%00000000
 	dta	%00000000
 	dta	%00010000
@@ -124,7 +132,7 @@ cs3
 	dta	%00010000
 	dta	%00000000
 	dta	%00000000
-cs4
+cs5
 	dta	%10000010
 	dta	%01000100
 	dta	%00000000
@@ -133,7 +141,7 @@ cs4
 	dta	%01000100
 	dta	%10000010
 
-cursor_shapes	dta a(0),a(cs1),a(cs2),a(cs3),a(cs4)
+cursor_shapes	dta a(0),a(cs1),a(cs2),a(cs3),a(cs4),a(cs5)
 
 cursor_clear
 	ldy cursor_lastVBL
@@ -197,6 +205,7 @@ cursor_update
 	sta DL.status+32
 
 	lda VBL.frame
+:3	lsr @
 	and #3
 	sta cursor_lastVBL
 	ora >PLR0_BASE
@@ -285,6 +294,7 @@ curcolor_update
 	sta $d006
 	sta $d007
 	lda VBL.frame
+:2	lsr @
 	and #3
 	tay
 	txa
@@ -635,7 +645,7 @@ ex	rts
 cursor_switch
 	ldy cursor_shape
 	iny
-	cpy #5
+	cpy #6
 	bne *+4
 	ldy #0
 	sty cursor_shape
