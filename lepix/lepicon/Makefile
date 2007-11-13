@@ -1,5 +1,4 @@
 MADS=mads
-
 CFLAGS=-Wall -g
 
 all: lepicon
@@ -10,7 +9,10 @@ MODS_O=$(MODS:%=%.o)
 
 %.obx: %.asx
 	$(MADS) $< -s
-	
+
+bin2c: bin2c.c
+	$(CC) $(CFLAGS) $^ -o $@
+
 %.xlc: %.obx bin2c
 	./bin2c $< $@
 
@@ -22,7 +24,7 @@ mod_gr8.o: mod_gr8.c mod_gr8.h mod_gr8.xlc
 lepicon: lepicon.o common.o $(MODS_O) 
 
 clean:
-	rm -f \
+	rm -f *~ \
 		lepicon lepicon.exe \
 		bin2c bin2c.exe \
 		*.xlc *.obx *.o *.LST *.TAB
