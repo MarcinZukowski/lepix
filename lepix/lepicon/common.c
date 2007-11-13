@@ -125,32 +125,26 @@ int CM_get_color(int x, int y, int value)
 			break ;
 		case 3:
 			/* floyd-steinberg */
-			value += diffusion[y*HSIZE+x] / 16;
-			value=MIN(value,255);
+			value += diffusion[y * HSIZE + x] / 16;
+			value = MIN(value, 255);
+			value = MAX(value, 0);
 			for(ret=1; value>color_borders[ret]; ret++);
-			reminder = value-color_borders[ret-1];
-//			reminder = value-(color_borders[ret-1]+color_borders[ret])/2;
-//			if (ret==1 && reminder > 0) {
-//				reminder = 0;
-//			}
-//			if (reminder<0) {
-//				ERROR("value=%d ret=%d cb[ret-1]=%d reminder=%d < 0", 
-//					value, ret, color_borders[ret-1], reminder);
-//			}
+			reminder = value - 
+					(color_borders[ret - 1] + color_borders[ret]) / 2;
 			if (x<HSIZE-1) {
-					diffusion[(y+0)*HSIZE+x+1] += reminder * 7 ;
+					diffusion[(y+0)*HSIZE+x+1] += reminder * 7;
 			}
 			if (y<VSIZE-1) {
 				if (x>0) {
-					diffusion[(y+1)*HSIZE+x-1] += reminder * 3 ;
+					diffusion[(y+1)*HSIZE+x-1] += reminder * 3;
 				}
-				diffusion[(y+1)*HSIZE+x-0] += reminder * 5 ;
+				diffusion[(y+1)*HSIZE+x-0] += reminder * 5;
 				if (x<HSIZE-1) {
-					diffusion[(y+1)*HSIZE+x+1] += reminder * 1 ;
+					diffusion[(y+1)*HSIZE+x+1] += reminder * 1;
 				}
 			}
 			ret--;
-			break ;
+			break;
 		default:
 			ERROR("find_color: unknown dithering\n");
 	}
