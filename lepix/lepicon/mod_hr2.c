@@ -130,7 +130,7 @@ static void convert()
 	
 	CM_initialize(5);
 	
-	INFO("hr1: Converting %s\n", fname);
+	INFO("hr2: Converting %s\n", fname);
 	
 	for(y=0;y<nlines;y++) {
 		for(x=0;x<HSIZE;x+=2) {
