@@ -177,13 +177,13 @@ init	equ *
 	
 INCLUDE_PICTURE	equ 0
 
-		ift !GFX_MODE
+		.ifndef GFX_MODE
 ;GFX_MODE	equ 1	; MIC
 ;GFX_MODE	equ 2	; INP
 ;GFX_MODE	equ 3	; CIN
 ;GFX_MODE	equ 4	; HIP
 GFX_MODE	equ 5	; TIP
-		eif
+		.endif
 		
 		ift GFX_MODE=1
 	icl 'mod_mic.asx'
