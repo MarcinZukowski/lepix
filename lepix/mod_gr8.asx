@@ -2,73 +2,71 @@
 * External
 MOD_MOD		equ *
 
-MOD_init		jmp MIC.init
-MOD_vbl			jmp MIC.vbl
-MOD_pick_color	jmp MIC.pick_color
-MOD_put_pixel	jmp MIC.put_pixel
-MOD_enable_zoom		jmp MIC.enable_zoom
-MOD_disable_zoom	jmp MIC.disable_zoom
-MOD_zoom_update		jmp MIC.zoom_update
+MOD_init		jmp GR8.init
+MOD_vbl			jmp GR8.vbl
+MOD_pick_color	jmp GR8.pick_color
+MOD_put_pixel	jmp GR8.put_pixel
+MOD_enable_zoom		jmp GR8.enable_zoom
+MOD_disable_zoom	jmp GR8.disable_zoom
+MOD_zoom_update		jmp GR8.zoom_update
 ; updates a single zoomed line. Y=line number
-MOD_zoom_update_line	jmp MIC.zoom_update_line
+MOD_zoom_update_line	jmp GR8.zoom_update_line
 ; updates upper part
-MOD_zoom_update_top		jmp MIC.zoom_update_top
+MOD_zoom_update_top		jmp GR8.zoom_update_top
 
 MOD_pmY			dta 20 ; in scanlines, Y position of the first line
-MOD_pixel_w		dta 2 ; hi-res (GR8), can be 1,2,4,8
+MOD_pixel_w		dta 1 ; hi-res (GR8), can be 1,2,4,8
 MOD_pixel_h		dta 1 ; - anything
 
-MOD_max_x		dta a(160)
+MOD_max_x		dta a(320)
 MOD_max_y		dta 200
 
-MOD_max_cursor_w	dta 4 ; for performance
+MOD_max_cursor_w	dta 8 ; for performance
 MOD_max_cursor_h	dta 8
 
 MOD_zoom_w			dta 80 ; in mode pixels
-MOD_zoom_h			dta MIC.zoomlines ; in mode pixels, MAX: 47
-MOD_zoom_pmY		dta 220-[2*MIC.zoomlines] ; in scanlines, Y position of a first line
+MOD_zoom_h			dta GR8.zoomlines ; in mode pixels, MAX: 47
+MOD_zoom_pmY		dta 220-[4*GR8.zoomlines] ; in scanlines, Y position of a first line
 MOD_zoom_pixel_w	dta 2 ; in GR15 pixels
-MOD_zoom_pixel_h	dta 2 ; in scanlines
-MOD_zoom_top_h		dta 200-4-[2*MIC.zoomlines] ; lines from main panel visible
+MOD_zoom_pixel_h	dta 4 ; in scanlines
+MOD_zoom_top_h		dta 200-4-[4*GR8.zoomlines] ; lines from main panel visible
 
 MOD_screen	equ *
-	dta d'C0:.. C1:.. C2:.. C3:..            ::MIC'
+	dta d'C0:.. C1:..                        ::GR8'
 	dta d'keys:QW ASDF 0123 JLIK PCZ UY           '
 
 MOD_curcolor_X	dta 0  ; in 15 pixels, from 0
-MOD_curcolor_W	dta 40 ; in 15 pixels
+MOD_curcolor_W	dta 80 ; in 15 pixels
 
 ; returns the mode color as a byte (used in UNDO)
-MOD_get_color	jmp MIC.get_color
+MOD_get_color	jmp GR8.get_color
 ; sets the mode colors as a byte (used in UNDO)
-MOD_set_color	jmp MIC.set_color
+MOD_set_color	jmp GR8.set_color
 
 MOD_MOD_LEN	equ *-MOD_MOD
 
 *******************************************************************************
 * Internal
-MIC			.LOCAL
+GR8			.LOCAL
 
-zoomlines	equ 47
+zoomlines	equ 23
 
 pline		equ $8000
-scrE		equ $8060
+scrF		equ $8060
 
-mic_dl		equ $ac00
+gr8_dl		equ $ac00
 
 loline		equ $b000
 hiline		equ $b100
-div4		equ $b200
+div8		equ $b200
 ands		equ $b300
 lsrs		equ $b400
-zoomhi		equ $b500
-zoomlo		equ $b600
 
 dlzoom_fill	equ $b800 ; zoomlines*15
 
 *******************************************************************************
 
-palette		dta $00,$14,$28,$3e
+palette		dta $00,$0f
 cur_color 	dta 0
 mic_hscrol	dta 12
 
@@ -80,7 +78,7 @@ get_color
 	rts
 
 vbl
-	mwa #mic_dl $d402
+	mwa #gr8_dl $d402
 	mwa #dli_palette $200
 	rts
 
@@ -88,9 +86,9 @@ init
 	jsr create_DL
 	jsr create_tabs
 	jsr update_status
-	ldxy MIC_KEYTABLE
+	ldxy GR8_KEYTABLE
 	jsr KB.extend_keytable
-	ldxy MIC_MENUTABLE
+	ldxy GR8_MENUTABLE
 	jsr MENU.extend_menutable
 
 	jsr prp_dlzoom_fill
@@ -99,10 +97,9 @@ init
 dli_palette
 	pha
 	sta $d40a
-	mva palette+0 $d01a
+	mva palette+0 $d018
+	mva palette+1 $d017
 	mva palette+1 $d016
-	mva palette+2 $d017
-	mva palette+3 $d018
 	mva mic_hscrol :HSCROL
 
 	mwa DLI.down_vec $200	; switch DLI
@@ -110,11 +107,11 @@ dli_palette
 	rti
 
 create_DL
-	mwa #scrE zerHlp
+	mwa #scrF zerHlp
 	mwa #core_dl _mcd+1
 	ldy #200
 _mcd0
-	lda #$4e
+	lda #$4f
 	jsr _mcd
 	lda zerHlp
 	jsr _mcd
@@ -184,12 +181,12 @@ wr	sta dlzoom_fill
 
 * ****************************************************************************
 * Palette management
-colorpos dta 0,40,80,120
+colorpos dta 0,80
 
 chg_color
 	clc
 	adc cur_color
-	and #3
+	and #1
 	sta cur_color
 
 upd_color
@@ -214,8 +211,11 @@ pick_color
 	sta zerHlp
 	lda hiline,y
 	sta zerHlp+1
+	lda cursor_X+1
+:5	asl @
 	ldx cursor_X
-	ldy div4,x
+	ora div8,x
+	tay
 	lda (zerHlp),y
 	and ands,x
 	ldy lsrs,x
@@ -230,7 +230,14 @@ mpc_cont
 * ****************************************************************************
 mpp_cntY	dta 0
 mpp_cntX	dta 0
-put_pixel
+
+
+put_pixel	.LOCAL
+
+zer_scr		equ zerHlp
+zer_effX	equ zerHlp+2
+zer_tmp		equ zerHlp+4
+
 	jsr UNDO.put_pixel_prelude
 
 	mva cursor_h mpp_cntY
@@ -238,21 +245,29 @@ put_pixel
 	ldy cursor_y
 	sty UNDO.pos_y
 	lda loline,y
-	sta zerHlp
+	sta zer_scr
 	lda hiline,y
-	sta zerHlp+1
+	sta zer_scr+1
 mpp_loopY
 	mva #0 mpp_cntX
 mpp_loopx
 	lda cursor_X
 	clc
 	adc mpp_cntX
+	sta zer_effX
 	tax
-	stx UNDO.pos_X
-	
+	stx UNDO.pos_x
+	lda cursor_X+1
+	adc #0
+	sta zer_effX+1
+;	sta UNDO.pos_x+1
+:5	asl @
+	ora div8,x
+	pha
+	tay
+
 ; save old color
-	ldy div4,x
-	lda (zerHlp),y
+	lda (zer_scr),y
 	ldy lsrs,x
 	beq pick_end
 pick
@@ -260,7 +275,7 @@ pick
 	dey
 	bne pick
 pick_end
-	and #3
+	and #1
 	sta UNDO.old_c
 ; put pixel
 	lda cur_color
@@ -270,13 +285,14 @@ mpp	asl @
 	dey
 	bne mpp
 mpp_cont
-	sta zerHlp+2
-	ldy div4,x
+	sta zer_tmp
+	pla
+	tay
 	lda ands,x
 	eor #$ff
-	and (zerHlp),y
-	ora zerHlp+2
-	sta (zerHlp),y
+	and (zer_scr),y
+	ora zer_tmp
+	sta (zer_scr),y
 	
 	lda cur_color
 	sta UNDO.new_c
@@ -287,12 +303,12 @@ mpp_cont
 	cmp cursor_W
 	bne mpp_loopX
 
-	lda zerHlp
+	lda zer_scr
 	clc
 	adc #40
-	sta zerHlp
+	sta zer_scr
 	bcc *+4
-	inc zerHlp+1
+	inc zer_scr+1
 
 	inc UNDO.pos_Y
 	dec mpp_cntY
@@ -300,20 +316,22 @@ mpp_cont
 
 	jsr UNDO.put_pixel_epilogue
 	rts
+	.ENDL ; put_pixel
 
 
 * ****************************************************************************
-mct_ands	dta $c0,$30,$0c,$03
-mct_lsrs	dta 6,4,2,0
+mct_ands	dta $80,$40,$20,$10,$08,$04,$02,$01
+mct_lsrs	dta 7,6,5,4,3,2,1,0
 create_tabs
-	mwa #scrE zer0
+	mwa #scrF zer0
 	ldy #0
 _mct0	tya
 	lsr @
 	lsr @
-	sta div4,y
+	lsr @
+	sta div8,y
 	tya
-	and #3
+	and #7
 	tax
 	lda mct_ands,x
 	sta ands,y
@@ -328,40 +346,6 @@ _mct0	tya
 	sta hiline,y
 	adc #0
 	sta zer0+1
-
-	tya
-	and #$c0
-	sta zerHlp
-:2	lsr @
-	ora zerHlp
-	sta zerHlp
-	tya
-	and #$30
-:2	lsr @
-	pha
-	ora zerHlp
-	sta zerHlp
-	pla
-:2	lsr @
-	ora zerHlp
-	sta zoomhi,y
-
-	tya
-	and #$0c
-:2	asl @
-	sta zerHlp
-:2	asl @
-	ora zerHlp
-	sta zerHlp
-	tya
-	and #$03
-	ora zerHlp
-	sta zerHlp
-	tya
-	and #$03
-:2	asl @
-	ora zerHlp
-	sta zoomlo,y
 
 	iny
 	bne _mct0
@@ -387,16 +371,18 @@ update_status
 zoom_lastY	dta 0
 
 zoom_update .LOCAL
-	mwa #DL_zoom+2 zer0
+;	mwa #DL_zoom+2 zer0
 	lda ZOOM.zoom_X
-	lsr @
+	clc
+	adc #7
 	pha
-	lda #12
-	bcc *+4
-	lda #10
+	and #7
+	eor #7
+	asl @
 	sta HSCROL
 	sta mic_hscrol
-	pla
+	pla 
+:3	lsr @
 	ldx ZOOM.zoom_Y
 	jmp dlzoom_fill ;)
 	.ENDL
@@ -422,23 +408,15 @@ disable_zoom
 ; Y - lineno
 zoom_update_line	.LOCAL
 	lda zoom_lineadr,y
-	sta dst1+2
-	sta dst2+2
+	sta dst+2
 	lda loline,y
 	sta src+1
 	lda hiline,y
 	sta src+2
 	ldx #39
-	ldy #79
 loop
-src		lda scrE,x
-	stx zerHlp
-	tax
-	lda zoomlo,x
-dst1	sta $c000+1,y-
-	lda zoomhi,x
-dst2	sta $c000+1,y-
-	ldx zerHlp
+src		lda scrF,x
+dst		sta $c000+1,x
 	dex
 	bpl loop
 	rts
@@ -491,7 +469,7 @@ fix_lasty
 	ldy zoom_lastY
 	jsr calc_dl_pos
 	ldy #0
-	lda #$4e
+	lda #$4f
 	sta (zer0),y+
 	ldx zoom_lastY
 	lda loline,x
@@ -501,7 +479,7 @@ fix_lasty
 	rts
 
 * ****************************************************************************
-MIC_KEYTABLE
+GR8_KEYTABLE
 	dta KEYCODE_Q,7,a(chg_color),$ff
 	dta KEYCODE_W,7,a(chg_color),$01
 
@@ -510,34 +488,33 @@ MIC_KEYTABLE
 	dta KEYCODE_D,15,a(chg_col_val),$f0
 	dta KEYCODE_F,15,a(chg_col_val),$10
 	dta KEYCODE_1,7,a(set_kolor),1
-	dta KEYCODE_2,7,a(set_kolor),2
-	dta KEYCODE_3,7,a(set_kolor),3
+	dta KEYCODE_2,7,a(set_kolor),0
 	dta KEYCODE_0,7,a(set_kolor),0
 
 	dta $ff
 
 * ****************************************************************************
 * I/O routines
-MIC_ext	dta c'MIC'
+GR8_ext	dta c'GR8'
 
-load_mic
-	ldxy MIC_ext
+load_gr8
+	ldxy GR8_ext
 	jsr IO.open_read
 	bpl transfer_mic
 	rts
-save_mic
-	ldxy MIC_ext
+save_gr8
+	ldxy GR8_ext
 	jsr IO.open_write
 	bpl transfer_mic
 	rts
 transfer_mic	.LOCAL
-	mwa #scrE IO.adr
+	mwa #scrF IO.adr
 	mwa #8000 IO.len
 	jsr IO.do
 	bmi ex
 
 	mwa #palette IO.adr
-	mwa #4 io.len
+	mwa #2 io.len
 	jsr IO.do
 	bmi ex
 
@@ -550,7 +527,7 @@ clear .LOCAL
 	jsr IO.confirm
 	beq ex
 
-	mwa #scrE zer1
+	mwa #scrF zer1
 	mwa #8000 zer2
 	lda #0
 	jsr memset
@@ -559,38 +536,37 @@ ex	rts
 
 
 * ****************************************************************************
-MIC_MENUTABLE
-	dta '1',a(load_mic),a(load_mic_msg)
-	dta '2',a(save_mic),a(save_mic_msg)
+GR8_MENUTABLE
+	dta '1',a(load_gr8),a(load_gr8_msg)
+	dta '2',a(save_gr8),a(save_gr8_msg)
 	dta 'C',a(clear),a(clear_msg)
 	dta $ff
 
-load_mic_msg
-	dta c'1 - Load *.MIC',eol
-save_mic_msg
-	dta c'2 - Save *.MIC',eol
+load_gr8_msg
+	dta c'1 - Load *.GR8',eol
+save_gr8_msg
+	dta c'2 - Save *.GR8',eol
 clear_msg
 	dta c'C - Clear picture',eol
 
 * ****************************************************************************
-MIC_return	equ *
+GR8_return	equ *
 
 		ift INCLUDE_PICTURE
-	org scrE
-	ins 'mic/fight.mic'
+	org scrF
+;	ins 'mic/fight.mic'
 ;	ins 'mic/tqatrees.mic'
 ;	ins 'mic/rpl-a.mic'
+	ins 'gr8/vw.gr8'
 		eif
 
 	org pline
-:10	dta 0
-:10	dta $55
-:10 dta $aa
-:10 dta $ff
+:20	dta 0
+:20 dta $ff
 
-	org MIC_DL
+	org GR8_DL
 	dta $80
-:8	dta $4e,a(pline)
+:8	dta $4f,a(pline)
 	dta 0,0
 DL_jsr	equ *+1
 	dta $01,a(core_dl)
@@ -599,13 +575,13 @@ DL_return
 
 DL_zoom
 	dta $20
-:zoomlines	dta $5d,0,0
+:zoomlines	dta $59,0,0
 	dta $01,a(DL_return)
 
 core_dl	equ *
 
-	org MIC_return
+	org GR8_return
 
-MIC.MOD_LEN	equ *-MIC
-	.ENDL ; MIC
+GR8.MOD_LEN	equ *-GR8
+	.ENDL ; GR8
 

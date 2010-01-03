@@ -15,10 +15,10 @@ MOD_zoom_update_line	jmp CIN.zoom_update_line
 MOD_zoom_update_top		jmp CIN.zoom_update_top
 
 MOD_pmY			dta 19 ; in scanlines, Y position of the first line
-MOD_pixel_w		dta 1 ; can be 1,2 or 4
+MOD_pixel_w		dta 2 ; hi-res (GR8), can be 1,2,4,8
 MOD_pixel_h		dta 1 ; - anything
 
-MOD_max_x		dta 160
+MOD_max_x		dta a(160)
 MOD_max_y		dta 200
 
 MOD_max_cursor_w	dta 4 ; for performance
@@ -397,7 +397,7 @@ pick_color
 	eor #[>scrE^>scrF]
 	sta zer2+1
 
-	ldx cursor_x
+	ldx cursor_X
 
 	lda cur_mode
 	and #MODE_BRI
@@ -480,7 +480,7 @@ mpp_loopY
 	mva #0 mpp_cntX
 mpp_loopx
 
-	lda cursor_x
+	lda cursor_X
 	clc
 	adc mpp_cntX
 	ldx pp_do_bri
@@ -912,13 +912,13 @@ fix_lasty
 * ****************************************************************************
 ; Same code in mod_cin and mod_tip
 chg_mode
-	; multiply cursor_X by 2 if only tone
+	; multiply cursor_oldX by 2 if only tone
 	lda cur_mode
 	cmp #MODE_TONE
 	bne um1
-	lda cursor_x
+	lda cursor_X
 	asl @
-	sta cursor_x
+	sta cursor_X
 um1
 	ldx cur_mode
 	dex
@@ -933,7 +933,7 @@ um1
 	beq um_tone
 um_bri
 	mva #160 MOD_max_x
-	mva #1 MOD_pixel_w
+	mva #2 MOD_pixel_w
 	mva #2 MOD_zoom_pixel_w
 	mva #80 MOD_zoom_w
 	rts
@@ -942,7 +942,7 @@ um_tone
 	lsr @
 	sta cursor_X
 	mva #80 MOD_max_x
-	mva #2 MOD_pixel_w
+	mva #4 MOD_pixel_w
 	mva #4 MOD_zoom_pixel_w
 	mva #40 MOD_zoom_w
 	rts

@@ -55,35 +55,40 @@ _skip
 	
 
 
-* expects value in A and lo/hi dest in X/Y
+* Prints a 3-digit decimal number 
+* expects value lo/hi in A/Y, and destination address set in write_dec.dst
 _wddata dta d'000'
 _wdsubs	dta 100,10,1
-write_dec
-	stx _wdsave+1
-	sty _wdsave+2
+write_dec	.LOCAL
 	ldx #0
-_wd0
-	tay
+digit_start
+	pha
 	lda #$10 ; '0'
 	sta _wddata,x
-	tya
-_wd1
+	pla
+digit_loop
+	cpy #0
+	bne digit_inc
 	cmp _wdsubs,x
-	bcc _wd2
-	sbc _wdsubs,x
+	bcc digit_next
+digit_inc
+	sub _wdsubs,x
+	scs:dey
 	inc _wddata,x
-	bne _wd1 ;!
-_wd2
+	bne digit_loop ;!
+digit_next
 	inx
 	cpx #3
-	bne _wd0
+	bne digit_start
 
-	ldy #2
-_wd3	lda _wddata,y
-_wdsave	sta 0000,y
-	dey
-	bpl _wd3
+	ldx #2
+print_loop	lda _wddata,x
+dst equ *+1
+	sta 12345,x
+	dex
+	bpl print_loop
 	rts
+	.ENDL
 
 * expects value in A and lo/hi dest in X/Y
 write_hex

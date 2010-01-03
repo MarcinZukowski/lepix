@@ -4,7 +4,8 @@ SRCS=lepix.asx atari.asx \
 	dl.asx dli.asx vbl.asx cursor.asx font.asx utils.asx zoom.asx \
 	joy.asx keyboard.asx mouse.asx \
 	io.asx menu.asx undo.asx \
-	mod_cin.asx mod_mic.asx mod_inp.asx mod_hip.asx mod_tip.asx
+	mod_cin.asx mod_mic.asx mod_inp.asx mod_hip.asx mod_tip.asx \
+	mod_gr8.asx
 
 TABS=$(SRCS:%.asx=%.tab)
 LSTS=$(SRCS:%.asx=%.lst)

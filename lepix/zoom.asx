@@ -32,39 +32,63 @@ lp	lda pages,x
 	rts
 	.ENDL ; rts
 
-; A - window size, X - max size, Y - cur value
-_zoom_magic
+; finds the start position of a zoom window in a given dimension 
+; A - window size, max_size - max size, X/Y - cur value lo/hi
+_zoom_magic	.LOCAL
 	sta zoomHlp+1
 	lsr @
 	sta zoomHlp
-	txa
-	sec
-	sbc zoomHlp+1
-	sta zoomHlp+1
+	lda max_size
+	sub zoomHlp+1
+	sta max_edge
+	lda max_size+1
+	sbc #0
+	sta max_edge+1
 
+	txa
+	sub zoomHlp
+	sta std_edge
 	tya
-	sec
-	sbc zoomHlp
-	bcs *+4
+	sbc #0
+	sta std_edge+1
+	bcs not_left_edge
+left_edge
 	lda #0
-	cmp zoomHlp+1
-	bcc *+5
-	lda zoomHlp+1
 	rts
+not_left_edge
+	cmp max_edge+1
+	bcc not_right_edge
+	bne right_edge
+	lda std_edge
+	cmp max_edge
+	bcc not_right_edge
+right_edge
+	lda max_edge
+	rts
+not_right_edge
+	lda std_edge
+	rts
+max_size	dta a(0)
+max_edge	dta a(0)
+std_edge	dta a(0)
+	.ENDL ; zoom_magic
 
 update	.LOCAL
 	lda state
-	beq ex
+	jeq ex
 
+	mwa mod_max_x _zoom_magic.max_size
 	lda :mod_zoom_w
-	ldx :mod_max_x
-	ldy :cursor_x
+	ldx :cursor_X
+	ldy :cursor_X+1
 	jsr _zoom_magic
 	sta zoom_x
 
+	mva mod_max_y _zoom_magic.max_size
+	mva #0 _zoom_magic.max_size+1
 	lda :mod_zoom_h
-	ldx :mod_max_y
-	ldy :cursor_y
+	ldx :cursor_y
+	ldy #0
 	jsr _zoom_magic
 	sta zoom_y
 
@@ -97,9 +121,11 @@ done_xy
 	mva zoom_x zoom_old_x
 	mva zoom_y zoom_old_y
 
+	mva mod_max_y _zoom_magic.max_size
+	mva #0 _zoom_magic.max_size+1
 	lda :mod_zoom_top_h
-	ldx :mod_max_y
-	ldy :cursor_y
+	ldx :cursor_y
+	ldy #0
 	jsr _zoom_magic
 	sta zoom_top_y
 	cmp zoom_old_top_y

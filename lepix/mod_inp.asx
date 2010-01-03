@@ -15,10 +15,10 @@ MOD_zoom_update_line	jmp INP.zoom_update_line
 MOD_zoom_update_top		jmp INP.zoom_update_top
 
 MOD_pmY			dta 20 ; in scanlines, Y position of the first line
-MOD_pixel_w		dta 1 ; can be 1,2 or 4
+MOD_pixel_w		dta 2 ; hi-res (GR8), can be 1,2,4,8
 MOD_pixel_h		dta 1 ; - anything
 
-MOD_max_x		dta 160
+MOD_max_x		dta a(160)
 MOD_max_y		dta 200
 
 MOD_max_cursor_w	dta 4 ; for performance
@@ -267,7 +267,7 @@ set_kolor
 
 * ****************************************************************************
 ipc_sub
-	ldx cursor_x
+	ldx cursor_X
 	ldy div4,x
 	lda (zer0),y
 	and ands,x
@@ -350,7 +350,7 @@ mpp_loopY
 	mva #0 mpp_cntX
 mpp_loopx
 	mva #0 UNDO.old_c
-	lda cursor_x
+	lda cursor_X
 	clc
 	adc mpp_cntX
 	tax

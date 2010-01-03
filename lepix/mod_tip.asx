@@ -15,10 +15,10 @@ MOD_zoom_update_line	jmp TIP.zoom_update_line
 MOD_zoom_update_top		jmp TIP.zoom_update_top
 
 MOD_pmY			dta 19 ; in scanlines, Y position of the first line
-MOD_pixel_w		dta 1 ; can be 1,2 or 4
+MOD_pixel_w		dta 2 ; hi-res (GR8), can be 1,2,4,8
 MOD_pixel_h		dta 2 ; - anything
 
-MOD_max_x		dta 160
+MOD_max_x		dta a(160)
 MOD_max_y		dta 100
 
 MOD_max_cursor_w	dta 4 ; for performance
@@ -479,7 +479,7 @@ pick_color	.LOCAL
 	eor #SCR_40_C0_EOR
 	sta zer2+1
 
-	ldx cursor_x
+	ldx cursor_X
 
 	lda cur_mode
 	and #MODE_BRI
@@ -591,7 +591,7 @@ loopY
 loopx
 	mva #0 UNDO.pos_x
 
-	lda cursor_x
+	lda cursor_X
 	clc
 	adc pp_cntX
 	ldx pp_do_bri
@@ -1040,9 +1040,9 @@ chg_mode
 	lda cur_mode
 	cmp #MODE_TONE
 	bne um1
-	lda cursor_x
+	lda cursor_X
 	asl @
-	sta cursor_x
+	sta cursor_X
 um1
 	ldx cur_mode
 	dex
@@ -1057,7 +1057,7 @@ um1
 	beq um_tone
 um_bri
 	mva #160 MOD_max_x
-	mva #1 MOD_pixel_w
+	mva #2 MOD_pixel_w
 	mva #2 MOD_zoom_pixel_w
 	mva #80 MOD_zoom_w
 	rts
@@ -1066,7 +1066,7 @@ um_tone
 	lsr @
 	sta cursor_X
 	mva #80 MOD_max_x
-	mva #2 MOD_pixel_w
+	mva #4 MOD_pixel_w
 	mva #4 MOD_zoom_pixel_w
 	mva #40 MOD_zoom_w
 	rts

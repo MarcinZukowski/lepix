@@ -15,10 +15,10 @@ MOD_zoom_update_line	jmp HIP.zoom_update_line
 MOD_zoom_update_top		jmp HIP.zoom_update_top
 
 MOD_pmY			dta 19 ; in scanlines, Y position of the first line
-MOD_pixel_w		dta 1 ; can be 1,2 or 4
+MOD_pixel_w		dta 2 ; hi-res (GR8), can be 1,2,4,8
 MOD_pixel_h		dta 1 ; - anything
 
-MOD_max_x		dta 160
+MOD_max_x		dta a(160)
 MOD_max_y		dta 200
 
 MOD_max_cursor_w	dta 4 ; for performance
@@ -427,7 +427,7 @@ pick_color	.LOCAL
 	mva loline,y zer1
 	mva hiline,y zer1+1
 
-	lda cursor_x
+	lda cursor_X
 	lsr @
 	tay
 	bcc GR9
@@ -481,7 +481,7 @@ put_pixel .LOCAL
 loopY
 	mva #0 pp_cntX
 loopx
-	lda cursor_x
+	lda cursor_X
 	clc
 	adc pp_cntX
 	tax

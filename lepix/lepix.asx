@@ -27,7 +27,7 @@ zer1	equ $e4
 zer2	equ $e6
 zer3	equ $e8
 zer4	equ $ea
-zerHlp	equ $f0
+zerHlp	equ $f0	; 16 reserved
 
 	org prog
 start
@@ -93,18 +93,20 @@ put_pixel_if_needed .LOCAL
 	lda cursor_pressed
 	sta last_pressed
 	beq dont_draw
-	txa
-	ldx cursor_X
-	ldy cursor_Y
-	cmp #0
+	cpx #0
 	beq draw
-	cpx last_X
+	lda cursor_X
+	cmp last_X
 	bne draw
-	cpy last_Y
+	lda cursor_X+1
+	cmp last_X+1
+	bne draw
+	lda cursor_Y
+	cmp last_Y
 	beq dont_draw
 draw
-	stx last_X
-	sty last_Y
+	mwa cursor_X last_X
+	mva cursor_Y last_Y
 	jsr MOD_put_pixel
 	lda ZOOM.state
 	beq dont_draw
@@ -114,7 +116,7 @@ dont_draw
 	rts
 	
 last_pressed	dta 0
-last_X			dta 0
+last_X			dta 0,0  // lo,hi
 last_Y			dta 0
 	.ENDL  ; put_pixel_if_new
 
@@ -182,7 +184,8 @@ INCLUDE_PICTURE	equ 0
 ;GFX_MODE	equ 2	; INP
 ;GFX_MODE	equ 3	; CIN
 ;GFX_MODE	equ 4	; HIP
-GFX_MODE	equ 5	; TIP
+;GFX_MODE	equ 5	; TIP
+GFX_MODE	equ 6	; GR8
 		.endif
 		
 		ift GFX_MODE=1
@@ -195,6 +198,8 @@ GFX_MODE	equ 5	; TIP
 	icl 'mod_hip.asx'
 		eli GFX_MODE=5
 	icl 'mod_tip.asx'
+		eli GFX_MODE=6
+	icl 'mod_gr8.asx'
 		els
 	.PRINT 'Unspecified mode'
 	ert 1;

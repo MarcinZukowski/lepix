@@ -222,7 +222,7 @@ _lo
 	decZer zer  ; skip old color
 	lda (zer),y
 	sta pos_x
-	sta cursor_x
+	sta cursor_X
 	
 	jsr update_pixel
 
@@ -276,7 +276,7 @@ _lo
 	ldy #0
 	lda (zer),y
 	sta pos_x
-	sta cursor_x
+	sta cursor_X
 	incZer zer  ; skip pos x
 	incZer zer  ; skip old color
 	lda (zer),y
@@ -328,7 +328,7 @@ dont_update_zoom
 
 
 save_old_values
-	mva cursor_x cx
+	mva cursor_X cx
 	mva cursor_y cy
 	mva cursor_h ch
 	mva cursor_w cw
@@ -343,7 +343,7 @@ save_old_values
 restore_old_values
 	mva #0 ignore
 
-	mva cx cursor_x
+	mva cx cursor_X
 	mva cy cursor_y
 	mva ch cursor_h
 	mva cw cursor_w

@@ -14,12 +14,13 @@ CURSOR_BEG	equ *
 
 ZFR_ENABLED	equ 1		; enable zoom frame
 
-cursor_X	dta 0
+cursor_X	dta 0,0  // standard lo, hi
 cursor_Y	dta 0
 cursor_H	dta 1
 cursor_W	dta 1
 cursor_PRESSED	dta 0
-player_sizes	dta 0,1,0,3
+player_sizes	dta 0,0,0,1,0,0,0,3
+player_width	dta 8,8,8,16,8,8,8,32	; in pm pixels
 
 cursor_masks	dta $80,$c0,$e0,$f0,$f8,$fc,$fe,$ff
 cursor_lastVBL	dta 0
@@ -79,15 +80,22 @@ _cgy
 	rts
 
 * returns absolute X position
-_cursor_get_X
-	lda #$30
+_cursor_get_X	.LOCAL
+	mwa #0 tmp
 	ldx MOD_pixel_w
-_cgx
-	clc
-	adc cursor_x
+_cgx	lda cursor_X
+	add:sta tmp
+	lda cursor_X+1
+	adc:sta tmp+1
 	dex
 	bne _cgx
+	lsr tmp+1
+	lda tmp
+	ror @
+	add #$30
 	rts
+tmp	dta 0,0
+	.ENDL
 
 * returns absolute height
 _cursor_get_H
@@ -101,45 +109,45 @@ _cgh
 	rts
 
 cs1
-	dta	%00010000
-	dta	%00010000
+	dta	%00001000
+	dta	%00001000
 	dta	%00000000
-	dta	%11000110
+	dta	%01100011
 	dta	%00000000
-	dta	%00010000
-	dta	%00010000
+	dta	%00001000
+	dta	%00001000
 cs2
-	dta	%11000110
-	dta	%10000010
+	dta	%01100011
+	dta	%01000001
 	dta	%00000000
 	dta	%00000000
 	dta	%00000000
-	dta	%10000010
-	dta	%11000110
+	dta	%01000001
+	dta	%01100011
 cs3
-	dta	%10000001
+	dta	%01000001
 	dta	%00000000
 	dta	%00000000
 	dta	%00000000
 	dta	%00000000
 	dta	%00000000
-	dta	%10000001
+	dta	%01000001
 cs4
 	dta	%00000000
 	dta	%00000000
-	dta	%00010000
-	dta	%00101000
-	dta	%00010000
+	dta	%00001000
+	dta	%00010100
+	dta	%00001000
 	dta	%00000000
 	dta	%00000000
 cs5
-	dta	%10000010
-	dta	%01000100
+	dta	%01000001
+	dta	%00100010
 	dta	%00000000
 	dta	%00000000
 	dta	%00000000
-	dta	%01000100
-	dta	%10000010
+	dta	%00100010
+	dta	%01000001
 
 cursor_shapes	dta a(0),a(cs1),a(cs2),a(cs3),a(cs4),a(cs5)
 
@@ -184,13 +192,13 @@ cursor_update
 	ora #"0"
 	sta DL.status+26
 ; print cursor position
+	mwa #DL.status+2 write_dec.dst
 	lda cursor_X
-	ldx <DL.status+2
-	ldy >DL.status+2
+	ldy cursor_X+1
 	jsr write_dec
+	mwa #DL.status+8 write_dec.dst
 	lda cursor_Y
-	ldx <DL.status+8
-	ldy >DL.status+8
+	ldy #0
 	jsr write_dec
 ; and width/height
 	lda cursor_W
@@ -251,10 +259,15 @@ _cus	lda cs1,x
 	inx
 	cpx #7
 	bne _cus
+
+	ldx MOD_pixel_w
+	lda player_width-1,x
+	lsr @
+	sta zerHlp
 	jsr _cursor_get_X
-	ldy cursor_lastVBL
 	sec
-:3	sbc MOD_pixel_w
+	sbc zerHlp
+	ldy cursor_lastVBL
 	sta $d000,y
 _cu_done
 ; and width
@@ -306,28 +319,34 @@ curcolor_update
 *******************************************************************************
 * Cursor X/Y/W/H manipulation
 
-cursor_inc_X
+cursor_inc_X	.LOCAL
 	lda cursor_X
-	clc
-	adc cursor_W
+	add cursor_W
+	sta zerHlp
+	lda cursor_X+1
+	adc #0
+	
+	cmp MOD_max_X+1
+	bne _do
+	lda zerHlp
 	cmp MOD_max_X
-	beq *+5
-	inc cursor_X
-	rts
+	beq _ex
+_do	inw cursor_X
+_ex	rts
+	.ENDL
 
 cursor_inc_Y
 	lda cursor_Y
 	clc
 	adc cursor_H
 	cmp MOD_max_Y
-	beq *+5
-	inc cursor_Y
+	seq:inc cursor_Y
 	rts
 
 cursor_dec_X
 	lda cursor_X
-	beq *+5
-	dec cursor_X
+	ora cursor_X+1
+	seq:dew cursor_X
 	rts
 
 cursor_dec_Y
@@ -339,17 +358,28 @@ cursor_dec_Y
 cursor_inc_W	.LOCAL
 	lda ZOOM.state
 	bne ex
-	ldy :cursor_W
-	cpy :MOD_max_cursor_w
+	ldy cursor_W
+	cpy MOD_max_cursor_w
 	beq ex
-	tya
-	clc
-	adc :cursor_X
-	cmp :MOD_max_X
-	bne *+5
-	dec :cursor_X
 	iny
-	sty :cursor_W
+	sty cursor_W
+	; check if we crossed the screen size
+	tya
+	add cursor_X
+	sta zerHlp
+	lda cursor_X+1
+	cmp MOD_max_X+1
+	bne ex
+	lda zerHlp
+	cmp MOD_max_X
+	bcc ex
+	; we did
+	lda MOD_max_X
+	sub cursor_W
+	sta cursor_X
+	lda MOD_max_X+1
+	sbc #0
+	sta cursor_X+1
 ex	mva #0 cursor_shape
 	rts
 	.ENDL
@@ -405,7 +435,6 @@ zfr_lastY	dta 0
 zfr_H		dta 0
 zfr_W		dta 0
 
-
 zfr_init	.LOCAL
 	lda MOD_zoom_h
 	ldx MOD_pixel_h
@@ -420,8 +449,8 @@ _ok
 	sec
 	sbc #6
 	sta zfr_H
-	lda MOD_zoom_w
 	ldx MOD_pixel_w
+	lda MOD_zoom_w
 	dex
 	beq _ok2
 	clc
@@ -430,6 +459,7 @@ _ml2
 	dex
 	bne _ml2
 _ok2
+	lsr @
 	clc
 	adc #1
 	sta zfr_W
@@ -540,6 +570,7 @@ _add
 	adc zoom.zoom_X
 	dey
 	bne _add
+	lsr @
 	clc
 	adc #$30-4
 	ldy zfr_last1
@@ -556,7 +587,6 @@ ex	rts
 zcur_lastVBL	dta 0
 zcur_lastY		dta 0
 zcur_lastSize	dta 0
-
 
 zcur_clear	.LOCAL
 	lda :zcur_lastVBL
@@ -621,12 +651,17 @@ dst	sta :PLR0_BASE,y
 	bne dst
 
 	; calc X
-	lda :cursor_X
-	sec
-	sbc ZOOM.zoom_x
-	bcs *+4
+	lda cursor_X
+	sub ZOOM.zoom_x
+	sta zerHlp
+	lda cursor_X+1
+	sbc #0
+	sta zerHlp+1
+	bcs _no_zero_X
 	lda #0
-	sta :zerHlp
+	sta zerHlp
+	sta zerHlp+1
+_no_zero_X
 
 	lda #0
 	ldx :MOD_zoom_pixel_w
