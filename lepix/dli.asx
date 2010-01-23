@@ -1,4 +1,13 @@
 DLI	.LOCAL
+
+/* text highlighting */
+hl_l1_x		dta $00
+hl_l1_color	dta $40
+hl_l1_mask	dta %00000000
+hl_l2_x		dta $00
+hl_l2_color	dta $f0
+hl_l2_mask	dta %00000000
+
 * DLI Interrupts
 
 init	equ *
@@ -25,12 +34,31 @@ DLI_down
 
 DLI_down2
 	pha
+	mva #3 SIZEP0
 
 ;	mva #0 $d01b
 	lda #$80
 	sta $d40a
 	sta $d018
-;	sta $d01a
+
+	mva hl_l1_x HPOSP0
+	mva hl_l1_color $d012
+	ldy #7
+_ddl1
+	sta $d40a
+	mva hl_l1_mask PLR0_BASE+232,y
+	dey
+	bne _ddl1
+	
+	mva hl_l2_x HPOSP0
+	mva hl_l2_color $d012
+	ldy #7
+_ddl2
+	sta $d40a
+	mva hl_l2_mask PLR0_BASE+240,y
+	dey
+	bne _ddl2
+	
 
 ;	mwa #DLI_down $200 ; switch DLI
 
