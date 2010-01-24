@@ -1,7 +1,7 @@
 	opt h+
 	
-scr1	equ $4060
-scr2	equ $6060
+scrF	equ $4060
+scrE	equ $6060
 
 colors	equ $a000
 
@@ -97,19 +97,13 @@ dli_loop
 	org dl1
 	dta $70,$70
 	dta $80,$00,0
-	dta $4f,a(scr1),$0e
-:49	dta $0f,$0e
-	dta $4f,a(scr1+$0fa0),$0e
-:49	dta $0f,$0e
+:100	dta $4f,a(scrF+80*#),$4e,a(scrE+40+80*#)
 	dta $41,a(dl2)
 
 	org dl2
 	dta $70,$70
 	dta $00,$80,0
-	dta $4e,a(scr2),$0f
-:49	dta $0e,$0f
-	dta $4e,a(scr2+$0fa0),$0f
-:49	dta $0e,$0f
+:100	dta $4e,a(scrE+80*#),$4f,a(scrF+40+80*#)
 	dta $41,a(dl1)
 	
     org $2e0

@@ -146,7 +146,7 @@ static void convert()
 //			for(c0=0; b0>color_borders[c0]; c0++);
 //			for(c1=0; b1>color_borders[c1]; c1++);
 			ind=5*c0+c1;
-
+/*
 			if (y&1) { // odd lines
 				s1=scr0+(y*HSIZE+x)/8;
 				s0=scr1+(y*HSIZE+x)/8;
@@ -154,6 +154,10 @@ static void convert()
 				s0=scr0+(y*HSIZE+x)/8;
 				s1=scr1+(y*HSIZE+x)/8;
 			}
+*/
+			s0=scr0+(y*HSIZE+x)/8;
+			s1=scr1+(y*HSIZE+x)/8;
+			
 			
 			ac0=colors[3*ind+0];
 			ac1=colors[3*ind+1];
@@ -179,6 +183,13 @@ static void write_files()
 	fwrite(scr1hdr, 1, sizeof(scr1hdr), fd);
 	fwrite(scr1, 1, PICSIZE8, fd);
 	fwrite(xlbin, 1, sizeof(xlbin), fd);
+	fclose(fd);
+	sprintf(fn, "%s.hr2", fname_base);
+	INFO("Writing %s\n", fn);
+	fd=fopen(fn,"wb");
+	fwrite(scr0, 1, PICSIZE8, fd);
+	fwrite(scr1, 1, PICSIZE8, fd);
+	fwrite(xlbin+6, 1, 6, fd);
 	fclose(fd);
 	INFO("Atari colors used: ");
 	for(i=0;i<6;i++) {
