@@ -49,7 +49,7 @@ MOD_MOD_LEN	equ *-MOD_MOD
 * Internal
 HR2			.LOCAL
 
-zoomlines	equ 23
+zoomlines	equ 22
 
 pline		equ $8000
 scrF		equ $8060
@@ -151,12 +151,15 @@ _dp
 dli_core
 	phaxy
 	
+	ldx #100
+	lda zoom.state
+	beq *+4
+	ldx #100-2*zoomlines-2
 	sta $d40a
 	lda VBL.frame
 	and #1
 	beq *+5
 	sta $d40a
-	ldx #100
 _dc	
 	lda palette+0
 	ldy palette+1
@@ -172,8 +175,20 @@ _dc
 	dex
 	bne _dc
 	
+	lda zoom.state
+	bne goto_dli_zoom
 	mwa DLI.down_vec $200	; switch DLI
 	plaxy
+	rti
+goto_dli_zoom
+	mwa #dli_zoom $200	; switch DLI
+	plaxy
+	rti
+	
+dli_zoom
+	pha
+	mwa DLI.down_vec $200	; switch DLI
+	pla
 	rti
 	
 create_DL
@@ -235,10 +250,19 @@ _mcd0
 	mwa #dl2_zoom _mcd2+1
 	lda #$20+$80
 	jsr _mcd
-	ldy #[2*zoomlines]
+	ldy #[zoomlines/2]
 cdl1
-	lda #$5f+$00
+	lda #$59+$00 ; mode9 - 4x4x1
+	jsr _mcd1
+	lda #$5a+$00 ; modeA - 4x4x4
+	jsr _mcd2
+	lda #0
 	jsr _mcd
+	jsr _mcd
+	lda #$59+$00 ; mode9 - 4x4x1
+	jsr _mcd2
+	lda #$5a+$00 ; modeA - 4x4x4
+	jsr _mcd1
 	lda #0
 	jsr _mcd
 	jsr _mcd
@@ -263,7 +287,7 @@ _mcd2	sta dl2_core
 
 prp_dlzoom_fill .LOCAL
 	mwa #dlzoom_fill wr+1
-; first, fill lo byte
+; first, fill lo bytes for modeF
 	ldx #[zoomlines]
 	mwa #DL1_zoom+2 zer1
 lo1
@@ -277,12 +301,12 @@ lo1
 	lda #DLZOOM_EOR
 	eor zer1+1
 	jsr wr
-	addtozer zer1 3
-	lda #{sta DL1_zoom+2}
+	lda #{sty DL1_zoom+2}
 	jsr wr
 	lda zer1
 	jsr wr
 	txa
+	eor #1
 	and #1
 	beq *+4
 	lda #DLZOOM_EOR
@@ -291,36 +315,6 @@ lo1
 	addtozer zer1 3
 	dex
 	bne lo1
-	lda #{eor #$80}
-	jsr wr
-	lda #$80
-	jsr wr
-	ldx #[zoomlines]
-	mwa #DL2_zoom+2 zer1
-lo2	lda #{sta DL1_zoom+2}
-	jsr wr
-	lda zer1
-	jsr wr
-	txa
-	and #1
-	beq *+4
-	lda #DLZOOM_EOR
-	eor zer1+1
-	jsr wr
-	addtozer zer1 3
-	lda #{sta DL2_zoom+2}
-	jsr wr
-	lda zer1
-	jsr wr
-	txa
-	and #1
-	beq *+4
-	lda #DLZOOM_EOR
-	eor zer1+1
-	jsr wr
-	addtozer zer1 3
-	dex
-	bne lo2
 ; then, fill hi byte
 	ldx #0
 	mwa #DL1_zoom+3 zer1
@@ -337,14 +331,14 @@ hloop ;)
 	lda >zoom_lineadr
 	jsr wr
 no_lda
-	lda #{sta DL1_zoom}
+	lda #{sta DL1_zoom+3}
 	jsr wr
 	lda zer1
 	jsr wr
 	lda zer1+1
 	jsr wr
 	addtozer zer1 3
-	lda #{sta DL2_zoom}
+	lda #{sta DL2_zoom+3}
 	jsr wr
 	lda zer2
 	jsr wr
@@ -353,7 +347,7 @@ no_lda
 	addtozer zer2 3
 	inc zerHlp
 	inx
-	cpx #[2*zoomlines]
+	cpx #[zoomlines]
 	bne hloop
 ; and exit
 	lda #{rts}
@@ -725,6 +719,10 @@ zoom_update .LOCAL
 	sta mic_hscrol
 	pla 
 :3	lsr @
+	pha
+	adc #40
+	tay
+	pla
 	ldx ZOOM.zoom_Y
 	jmp dlzoom_fill ;)
 	.ENDL
@@ -758,18 +756,64 @@ disable_zoom
 ; Y - lineno
 zoom_update_line	.LOCAL
 	lda zoom_lineadr,y
-	sta dst+2
+	sta dst1+2
+	sta dst2+2
+	sta dst3+2
 	lda loline,y
-	sta src+1
+	sta src1+1
+	sta src2+1
 	lda hiline,y
-	sta src+2
+	sta src1+2
+	eor #SCR_EOR
+	sta src2+2
 	ldx #39
+	ldy #78
 loop
-src		lda scrF,x
-dst		sta $c000+1,x
+src1	lda scrF,x
+dst1	sta $c000+1,x
+src2	lda scrE,x
+	sta org_byte
+	
+	lda org_byte
+	and #$c0
+	sta cur_byte
+:2	lsr @
+	ora cur_byte
+	sta dst_byte
+	
+	lda org_byte
+	and #$30
+:2	lsr @
+	sta cur_byte
+:2	lsr @
+	ora cur_byte
+	ora dst_byte
+dst2	sta $c000+1+40,y
+	
+	lda org_byte
+	and #$03
+	sta cur_byte
+:2	asl @
+	ora cur_byte
+	sta dst_byte
+	
+	lda org_byte
+	and #$0c
+:2	asl @
+	sta cur_byte
+:2	asl @
+	ora cur_byte
+	ora dst_byte
+dst3	sta $c000+1+41,y
+	
+	dey
+	dey
 	dex
 	bpl loop
 	rts
+org_byte	dta 0
+cur_byte	dta 0
+dst_byte	dta 0
 	.ENDL
 
 zoom_update_top
@@ -834,24 +878,22 @@ fix_lasty
 	eor #DL_EOR
 	sta zer1+1
 
-	ldx zoom_lastY
 	ldy #0
+	ldx zoom_lastY
 	txa
 	and #1
-	bne *+4
-	lda #$01
-	eor #$4f
+	eor #$4f  ; $4f for even, $4e for odd
 	sta (zer0),y
+	eor #1
 	sta (zer1),y+
 	lda loline,x
 	sta (zer0),y
 	sta (zer1),y+
 	txa
 	and #1
-	eor #1
 	beq *+4
 	lda #SCR_EOR
-	eor hiline,x
+	eor hiline,x ; hiline for even, ^SCR_EOR for odd
 	sta (zer0),y
 	eor #SCR_EOR
 	sta (zer1),y
