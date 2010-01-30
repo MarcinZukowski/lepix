@@ -49,7 +49,7 @@ MOD_MOD_LEN	equ *-MOD_MOD
 * Internal
 HR2			.LOCAL
 
-zoomlines	equ 22
+zoomlines	equ 28
 
 pline		equ $8000
 scrF		equ $8060
