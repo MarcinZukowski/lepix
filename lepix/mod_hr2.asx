@@ -186,10 +186,41 @@ goto_dli_zoom
 	rti
 	
 dli_zoom
-	pha
+	phaxy
+	lda VBL.frame
+	and #1
+	eor #1
+	asl @
+	tax
+	mva palette+0 dz_cols+2
+	mva palette+1 dz_cols+3
+	mva palette+2 $d01a
+	sta dz_cols
+	sta dz_cols+4
+	mva palette+3 $d016
+	sta dz_cols+1
+	sta dz_cols+5
+	mva palette+4 $d017
+	mva palette+5 $d018
+
+	ldy #zoomlines/2-3
+dz_loop	lda dz_cols,x
+	sta $d01a
+	lda dz_cols+1,x
+	sta $d016
+	lda dz_cols+2,x
+:4	sta $d40a
+	sta $d01a
+	lda dz_cols+3,x
+	sta $d016
+:4	sta $d40a
+	dey
+	bne dz_loop
+
 	mwa DLI.down_vec $200	; switch DLI
-	pla
+	plaxy
 	rti
+dz_cols	dta 0,0,0,0,0,0
 	
 create_DL
 	mwa #scrF zer1
@@ -320,13 +351,9 @@ lo1
 	mwa #DL1_zoom+3 zer1
 	mwa #DL2_zoom+3 zer2
 hloop ;)
-	txa
-	lsr @
-	bcs no_lda
 	lda #{lda zoom_lineadr,X}
 	jsr wr
 	txa
-	lsr @
 	jsr wr
 	lda >zoom_lineadr
 	jsr wr
@@ -391,6 +418,19 @@ chg_col_val
 	clc
 	adc palette,x
 	sta palette,x
+	cpx #2
+	bpl ccv_cont
+	; for colors 0/1, make sure they share highest nibble
+	and #$f0
+	sta zerHlp
+	txa
+	eor #1
+	tax
+	lda palette,x
+	and #$0f
+	ora zerHlp
+	sta palette,x
+ccv_cont
 	jmp update_status
 set_kolor
 	sta cur_color
@@ -720,7 +760,8 @@ zoom_update .LOCAL
 	pla 
 :3	lsr @
 	pha
-	adc #40
+	asl @
+	adc #64
 	tay
 	pla
 	ldx ZOOM.zoom_Y
@@ -773,8 +814,7 @@ src1	lda scrF,x
 dst1	sta $c000+1,x
 src2	lda scrE,x
 	sta org_byte
-	
-	lda org_byte
+
 	and #$c0
 	sta cur_byte
 :2	lsr @
@@ -788,7 +828,7 @@ src2	lda scrE,x
 :2	lsr @
 	ora cur_byte
 	ora dst_byte
-dst2	sta $c000+1+40,y
+dst2	sta $c000+1+64,y
 	
 	lda org_byte
 	and #$03
@@ -804,7 +844,7 @@ dst2	sta $c000+1+40,y
 :2	asl @
 	ora cur_byte
 	ora dst_byte
-dst3	sta $c000+1+41,y
+dst3	sta $c000+1+65,y
 	
 	dey
 	dey
