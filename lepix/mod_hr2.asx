@@ -157,6 +157,7 @@ dli_core
 	ldx #100-2*zoomlines-2
 	sta $d40a
 	lda VBL.frame
+	eor zoom.zoom_top_Y
 	and #1
 	beq *+5
 	sta $d40a
@@ -203,7 +204,7 @@ dli_zoom
 	mva palette+4 $d017
 	mva palette+5 $d018
 
-	ldy #zoomlines/2-3
+	ldy #zoomlines/2
 dz_loop	lda dz_cols,x
 	sta $d01a
 	lda dz_cols+1,x
@@ -217,6 +218,7 @@ dz_loop	lda dz_cols,x
 	dey
 	bne dz_loop
 
+	mwa #0 $d01a
 	mwa DLI.down_vec $200	; switch DLI
 	plaxy
 	rti
@@ -761,7 +763,7 @@ zoom_update .LOCAL
 :3	lsr @
 	pha
 	asl @
-	adc #64
+	adc #63
 	tay
 	pla
 	ldx ZOOM.zoom_Y
