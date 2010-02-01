@@ -655,7 +655,7 @@ other_color	dta 0
 put_pixel_table
 	// first modeE (one pixel), then modeF (two pixels)
 	dta 0,%00		; 00 !
-	dta 0,%01		; 01 !
+	dta 0,%01		; 01 !*
 	dta 0,%01		; 02 => 01
 	dta 0,%01		; 03 => 01
 	dta 0,%01		; 04 => 01
@@ -673,7 +673,7 @@ put_pixel_table
 	dta 2,%10		; 31 => 32
 	dta 2,%10		; 32 !
 	dta 2,%11		; 33 !
-	dta 3,%01		; 34 => 33
+	dta 3,%01		; 34 !*
 	dta 3,%10		; 40 => 43
 	dta 3,%10		; 41 => 43
 	dta 3,%10		; 42 => 43
@@ -986,7 +986,7 @@ transfer_hr2	.LOCAL
 	bmi ex
 	
 	mwa #palette IO.adr
-	mwa #2 io.len
+	mwa #6 io.len
 	jsr IO.do
 	bmi ex
 
@@ -1030,12 +1030,15 @@ HR2_return	equ *
 
 		ift INCLUDE_PICTURE
 	org scrF
+;	ins 'hr2/ryj.hr2',0,8000
 ;	ins 'hr2/replay.hr2',0,8000
 	ins 'hr2/boris9901.hr2',0,8000
 	org scrE
+;	ins 'hr2/ryj.hr2',8000,8000
 ;	ins 'hr2/replay.hr2',8000,8000
 	ins 'hr2/boris9901.hr2',8000,8000
 	org palette
+;	ins 'hr2/ryj.hr2',16000,6
 ;	ins 'hr2/replay.hr2',16000,6
 	ins 'hr2/boris9901.hr2',16000,6
 		eif
