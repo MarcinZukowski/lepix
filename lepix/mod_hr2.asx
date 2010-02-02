@@ -1028,19 +1028,21 @@ clear_msg
 * ****************************************************************************
 HR2_return	equ *
 
+.macro inss 
+;	ins 'hr2/ryjek5c.hr2',:1,:2
+;	ins 'hr2/ryj.hr2',:1,:2
+;	ins 'hr2/replay.hr2',:1,:2
+	ins 'hr2/boris9901.hr2',:1,:2
+.endm
+
+
 		ift INCLUDE_PICTURE
 	org scrF
-;	ins 'hr2/ryj.hr2',0,8000
-;	ins 'hr2/replay.hr2',0,8000
-	ins 'hr2/boris9901.hr2',0,8000
+	inss 0,8000
 	org scrE
-;	ins 'hr2/ryj.hr2',8000,8000
-;	ins 'hr2/replay.hr2',8000,8000
-	ins 'hr2/boris9901.hr2',8000,8000
+	inss 8000,8000
 	org palette
-;	ins 'hr2/ryj.hr2',16000,6
-;	ins 'hr2/replay.hr2',16000,6
-	ins 'hr2/boris9901.hr2',16000,6
+	inss 16000,6
 		eif
 
 	org pline 
