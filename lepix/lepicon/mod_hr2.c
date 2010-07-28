@@ -17,6 +17,8 @@ static unsigned char colorsets[] = {
 	4, 8, 0, 4, 8, 12,
 } ;
 
+static int color_map_id = 0;
+
 static void usage()
 {
 	printf( 
@@ -34,6 +36,9 @@ static void usage()
 	"\t\t1 - chessboard\n"
 	"\t\t2 - progressive (experimental)\n"
 	"\t\t3 - Floyd-Steinberg\n"
+	"\t-M - id of map of colors:\n"
+	"\t\t0 - more precise, higher flickering on 4 color combinations [default]\n"
+	"\t\t1 - less precise, less flickering on 4 color combinations\n"
 	);
 }
 
@@ -86,7 +91,16 @@ static int parse_arg(int argc, char **argv)
 			}
 			CM_dither_algo=val;
 			break ;
-			
+		case 'M':
+			if (argc<i+1) {
+				ERROR("Not enough parameters for -D\n");
+			}
+			sscanf(argv[i++],"%d", &val);
+			if (val<0 || val>1) {
+				ERROR("Possible map ids are 0,1\n");
+			}
+			color_map_id = val;
+			break ;
 		default:
 			i=0;
 	}
@@ -99,14 +113,23 @@ static void convert()
 	char *s0,*s1;
 	memset(scr0, 0, PICSIZE8);
 	memset(scr1, 0, PICSIZE8);
-	int colors[] = {
+		// Notation, from left
+		// - double pixel in gr15
+		// - left  pixel in gr8
+		// - right pixel in gr8
+		// - XX - expected pixels in gr8
+		// - how close we are
+		//   - XX ! - XX representation is perfect
+		//   - XX !* - XX representation is perfect but flickers more
+		//   - XX . == YY  - XX not perfect, equal to one for YY
+	int colors_moreprecise[] = {
 		//	col15	col8a	col8b  
 			0,		0,		0,		// 00 !
-			0,		0,		1,		// 01 !
+			0,		0,		1,		// 01 !*
 			1,		0,		0,		// 02 . == 11
 			1,		0,		1,		// 03 . == 12
 			1,		1,		1,		// 04 . == 22
-			0,		1,		0,		// 10 !
+			0,		1,		0,		// 10 !*
 			1,		0,		0,		// 11 !
 			1,		0,		1,		// 12 !
 			1,		1,		1,		// 13 . == 22
@@ -120,13 +143,45 @@ static void convert()
 			1,		1,		1,		// 31 . == 22
 			2,		1,		0,		// 32 !
 			2,		1,		1,		// 33 !
-			3,		0,		1,		// 34 !
+			3,		0,		1,		// 34 !*
 			1,		1,		1,		// 40 . == 22
 			2,		1,		0,		// 41 . == 32
 			2,		1,		1,		// 42 . == 33
-			3,		1,		0,		// 43 !
+			3,		1,		0,		// 43 !*
 			3,		1,		1,		// 44 !
 	};
+	int colors_lessflicker[] = {
+		// ? - change VS above to lose precision but avoid flickering
+		//	col15	col8a	col8b  
+			0,		0,		0,		// 00 !
+			0,		0,		0,		// 01 ?
+			1,		0,		0,		// 02 . == 11
+			1,		0,		1,		// 03 . == 12
+			1,		1,		1,		// 04 . == 22
+			0,		0,		0,		// 10 ?
+			1,		0,		0,		// 11 !
+			1,		0,		1,		// 12 !
+			1,		1,		1,		// 13 . == 22
+			2,		0,		1,		// 14 . == 23
+			1,		0,		0,		// 20 . == 11
+			1,		1,		0,		// 21 !
+			1,		1,		1,		// 22 ! or 2 0 0
+			2,		0,		1,		// 23 !
+			2,		1,		1,		// 24 . == 33
+			1,		1,		0,		// 30 . == 21
+			1,		1,		1,		// 31 . == 22
+			2,		1,		0,		// 32 !
+			2,		1,		1,		// 33 !
+			3,		1,		1,		// 34 ?
+			1,		1,		1,		// 40 . == 22
+			2,		1,		0,		// 41 . == 32
+			2,		1,		1,		// 42 . == 33
+			3,		1,		1,		// 43 ?
+			3,		1,		1,		// 44 !
+	};
+	int *colors;
+	
+	colors = (color_map_id == 0) ? colors_moreprecise : colors_lessflicker;
 	
 	CM_initialize(5);
 	
