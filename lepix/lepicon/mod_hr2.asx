@@ -88,6 +88,11 @@ dli_loop
 
 	dey
 	bne dli_loop
+	
+	lda #0
+	sta $d40a
+	sta $d01a
+	
 
 	lda $88
 	ldx $8a
